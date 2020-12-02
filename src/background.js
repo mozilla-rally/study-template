@@ -5,6 +5,11 @@
 window.browser = require("webextension-polyfill");
 const Rally = require("@mozilla/rally");
 
+const WebScienceDebugging = require("../WebScience/Utilities/Debugging.js");
+
+let testLogger = WebScienceDebugging.getDebuggingLog("TesWebScience");
+testLogger("some message!");
+
 // ... Add more implementation here!
 
 const rally = new Rally();
