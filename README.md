@@ -1,6 +1,12 @@
 # Mozilla Rally study template.
-The purpose of this repository is to provide a starting point to build a Rally study.
+The purpose of this repository is to provide a starting point to build a Rally study. It contains:
 
+1. an example [`manifest.json'](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/manifest.json) file.
+2. an example background and content script in `src`.
+3. an example options page in `public/index.html`. _note:_ this page is used in the provided integration test example.
+4. a rollup config file that builds the files needed for the web extension using the source files in `src/` (the background & content scripts).
+5. an example integration test that launches a browser, installs the add-on, and then views the options page.
+6. a `web-ext-config.js` file & an eslint configuration.
 ## Getting started
 
 1. Fork this repository.
@@ -32,7 +38,6 @@ fork-dir> npm install .
 ```
 
 5. Test the customized study in Firefox and commit your changes: doing this right after the initial fork provides a nice and clean cutting point with the original repository, which will simplify future updates (if needed).
-
 ## Building upon this template
 This template uses [rollup.js](https://rollupjs.org/) as a module bundler and NPM for dependency management. The [manifest.json](./manifest.json) file already includes a sample background scripts.
 
@@ -72,7 +77,7 @@ The template comes with a set of pre-defined NPM commands (to run as `npm run <c
 * `lint`: run linting on the add-on code.
 * `package`: packages the final archive containing the bundled addon, is saved in the `web-ext-artifacts` directory.
 * `start`: build the addon and run a Firefox instance and side-load the add-on for manual testing or debugging purposes.
-* `test-integration`: perform the provided integration test for the final addon.
+* `test-integration`: perform the provided integration test for the final addon. This template includes a sample test that opens the provided example options page. If you remove the options page from this template and plan on using the integration testing template provided, make sure to update the test appropriately.
 
 ## Manual testing in the browser
 To test, either load as a temporary add-on in Firefox (`about:debugging`) or Chrome ("developer mode" in `chrome://extensions`) or use `npm run start`.
