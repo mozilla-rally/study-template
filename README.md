@@ -119,4 +119,4 @@ NOTE - make sure to publish as a "pre-release" which will prevent existing users
 
 It may take some time for your updated extension to be reviewed and available for download.
 
-Any existing study users will be updated automatically, however the new version of your study will not be available for enrollment until the change is (made available to the core-addon)[https://github.com/mozilla-rally/rally-core-addon/blob/master/docs/STUDY_PUBLISHING.md]. Contact the Rally team for help with this.
+Any existing study users will be updated automatically, however the new version of your study will not be available for enrollment until the change is [made available to the core-addon](https://github.com/mozilla-rally/rally-core-addon/blob/master/docs/STUDY_PUBLISHING.md). Contact the Rally team for help with this.
