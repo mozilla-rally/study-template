@@ -85,3 +85,38 @@ The template comes with a set of pre-defined NPM commands (to run as `npm run <c
 
 ## Manual testing in the browser
 To test, either load as a temporary add-on in Firefox (`about:debugging`) or Chrome ("developer mode" in `chrome://extensions`) or use `npm run start`.
+
+# Publishing a study
+## Create an addons.mozilla.org account
+
+Create account on https://addons.mozilla.org, navigate to the "Developer Hub", and choose "Submit a New Add-on".
+
+## Package your extension
+
+First, make sure to update your version numbers in both `package.json` and `manifest.json`.
+
+Ensure that your study passes tests:
+```bash
+npm run test-integration
+```
+
+Next, package the study:
+```bash
+npm run package.json
+```
+
+Finally, upload the resulting `.zip` file in `web-ext-artifacts/` to the https://addons.mozilla.org Developer Hub.
+
+It may take some time for your extension to be reviewed and available for download.
+
+## Updating the Study Extension
+
+First, refer to the [Package your extension](#package-your-extension) section. Make sure to update your version numbers!
+
+Once you have the new version of your extension ready to publish, the usual addons.mozilla.org update process applies - log in to https://addons.mozilla.org and navigate to the "Developer Hub", then follow the instructions to update your extension.
+
+NOTE - make sure to publish as a "pre-release" which will prevent existing users from updating until QA is complete.
+
+It may take some time for your updated extension to be reviewed and available for download.
+
+Any existing study users will be updated automatically, however the new version of your study will not be available for enrollment until the change is (made available to the core-addon)[https://github.com/mozilla-rally/rally-core-addon/blob/master/docs/STUDY_PUBLISHING.md]. Contact the Rally team for help with this.
