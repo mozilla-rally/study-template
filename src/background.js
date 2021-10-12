@@ -153,3 +153,4 @@ chrome.browserAction.onClicked.addListener(async () =>
 );
 
 // Take no further action until the rallyStateChange callback is called.
+

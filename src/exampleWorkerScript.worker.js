@@ -4,4 +4,4 @@
 
 // ... Add more implementation here!
 
-console.debug("Running worker script");
+console.log("Running worker script");
