@@ -4,17 +4,24 @@
 
 import * as webScience from "@mozilla/web-science";
 
-// This helper function will categorize and standardize URL
+// This helper function will categorize YouTube URL
 // It will categorize YouTube page URL, such as home, search, video, and other
-const standardizeYouTubeURL = (originalYouTubeURL) => {
+const categorizeYouTubeURL = (originalYouTubeURL) => {
     const returnValue = {
         content: "",
         type: ""
     }
+    // We encountered a YouTube Home Page URL
+    if(originalYouTubeURL.startsWith('https://www.youtube.com')) {
+        returnValue.type = "Home";
+    }
+
     // We encountered a YouTube Video URL
     if(originalYouTubeURL.includes('/watch?')) {
       returnValue.content = extractYouTubeVideoID(originalYouTubeURL);
       returnValue.type = "Video";
+      const pageTitle = document.title;
+      returnValue.videoTitle = pageTitle.slice(0, (pageTitle.indexOf(" - YouTube") - 1));
     } 
     
     // We encountered a YouTube Search URL
@@ -22,7 +29,12 @@ const standardizeYouTubeURL = (originalYouTubeURL) => {
         returnValue.content = extractYouTubeSearchQuery(originalYouTubeURL);
         returnValue.type = "Search";
     }
-    
+
+    // Other YouTube URLs are left uncategorized
+    else {
+        returnValue.type = "Other";
+    }
+
     return returnValue;
 }
 
@@ -42,7 +54,6 @@ const extractYouTubeVideoID = (YouTubeURL) => {
 }
 
 // Extract YouTube's search query from YouTube's search query URL, taking account to URL encoding characters
-// https://www.youtube.com/watch?t=230&v=MuOe3NM_2Ig&feature=youtu.be -> MuOe3NM_2Ig
 // https://www.youtube.com/results?search_query=MC-21+300 -> MC-21 300
 const extractYouTubeSearchQuery = (YouTubeURL) => {
     const searchIdentifierStartIndex = YouTubeURL.indexOf("search_query=") + 13;
@@ -74,7 +85,7 @@ const pageVisitListener = function(details) {
     console.log("PageVisitListener " + details.url + " from " + details.referrer); // Works as intended
     // console.log("The time is " + details.pageVisitStartTime); // Will return timestamp (in millisecond) relative to UNIX epoch // Works as intended
 
-    console.log("Standardized YouTube URL is: " + standardizeYouTubeURL(details.url).content + " and " + standardizeYouTubeURL(details.url).type);
+    console.log("Standardized YouTube URL is: " + categorizeYouTubeURL(details.url).content + " and " + categorizeYouTubeURL(details.url).type);
 }
 
 export function initialize() {
