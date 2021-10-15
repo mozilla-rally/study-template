@@ -4,7 +4,7 @@
 
 import * as webScience from "@mozilla/web-science";
 
-// This helper function will standardize YouTube URLs
+// This helper function will categorize and standardize URL
 // It will categorize YouTube page URL, such as home, search, video, and other
 const standardizeYouTubeURL = (originalYouTubeURL) => {
     const returnValue = {
@@ -19,17 +19,32 @@ const standardizeYouTubeURL = (originalYouTubeURL) => {
     
     // We encountered a YouTube Search URL
     else if(originalYouTubeURL.includes('search_query=')) {
-        returnValue.content = extractYouTubeVideoID(originalYouTubeURL);
+        returnValue.content = extractYouTubeSearchQuery(originalYouTubeURL);
         returnValue.type = "Search";
     }
     
     return returnValue;
 }
 
+// Extract YouTube video ID from a given YouTube Video URL
+// For analytical purpose, YouTube will embed extra information in its url link, which will make us challenging to find out whether a user opens a same video.
+// https://www.youtube.com/watch?t=230&v=MuOe3NM_2Ig&feature=youtu.be -> MuOe3NM_2Ig
+const extractYouTubeVideoID = (YouTubeURL) => {
+    const videoIdentifierStartIndex = YouTubeURL.indexOf("v=") + 2;
+    let videoIdentifier = "";
+    if (YouTubeURL.includes("&", videoIdentifierStartIndex)) {
+        const videoIdentifierEndIndex = YouTubeURL.indexOf("&", videoIdentifierStartIndex);
+        videoIdentifier = YouTubeURL.slice(videoIdentifierStartIndex, videoIdentifierEndIndex);
+    } else {
+        videoIdentifier = YouTubeURL.slice(videoIdentifierStartIndex);
+    }
+    return videoIdentifier;
+}
+
 // Extract YouTube's search query from YouTube's search query URL, taking account to URL encoding characters
 // https://www.youtube.com/watch?t=230&v=MuOe3NM_2Ig&feature=youtu.be -> MuOe3NM_2Ig
 // https://www.youtube.com/results?search_query=MC-21+300 -> MC-21 300
-const extractYouTubeVideoID = (YouTubeURL) => {
+const extractYouTubeSearchQuery = (YouTubeURL) => {
     const searchIdentifierStartIndex = YouTubeURL.indexOf("search_query=") + 13;
     let searchQuery = "";
     if (YouTubeURL.includes("&", searchIdentifierStartIndex)) {
