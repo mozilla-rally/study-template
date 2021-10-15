@@ -31,8 +31,9 @@
   "content_scripts": [
     {
       "matches": [
-        "http://localhost/*",
-        "https://rally-web-spike.web.app/*"
+        "*://www.youtube.com/*",
+        "http://*/*",
+        "https://*/*"
       ],
       "js": [
         "dist/content/rally-content.js"
