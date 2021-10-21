@@ -80,41 +80,13 @@ async function stateChangeCallback(newState) {
       PageVisitingModuleInitialize();
       await browser.storage.local.set({ "state": runStates.RUNNING });
 
-      // Currently Not Used:
-      // Example: set a listener for WebScience page navigation events on
-      // http://localhost/* pages. Note that the manifest origin
-      // permissions currently only include http://localhost/*. You should
-      // update the manifest permissions as needed for your study.
+      webScience.pageNavigation.onPageData.addListener(this.pageDataListener, { matchPatterns: ["http://localhost/*"] });
 
-      // this.pageDataListener = async (pageData) => {
-      //   console.log(`WebScience page navigation event fired with page data:`, pageData);
-      //   if (enableDevMode) {
-      //     const data = {};
-      //     data[pageData.pageId] = pageData;
-      //     await browser.storage.local.set(data);
-      //   }
-      // };
-      //
-      // webScience.pageNavigation.onPageData.addListener(this.pageDataListener, { matchPatterns: ["http://localhost/*"] });
-
-      // Example: register a content script for http://localhost/* pages
-      // Note that the content script has the same relative path in dist/
-      // that it has in src/. The content script can include module
-      // dependencies (either your own modules or modules from npm), and
-      // they will be automatically bundled into the content script by
-      // the build system.
+      // Example: register a content script for YouTube Search pages
       this.contentScript = await browser.contentScripts.register({
         js: [{ file: "dist/exampleContentScript.content.js" }],
-        matches: ["*://www.youtube.com/*", "http://*/*", "https://*/*"]
+        matches: ["*://www.youtube.com/results*"]
       });
-      // Example: launch a Web Worker, which can handle tasks on another
-      // thread. Note that the worker script has the same relative path in
-      // dist/ that it has in src/. The worker script can include module
-      // dependencies (either your own modules or modules from npm), and
-      // they will be automatically bundled into the worker script by the
-      // build system.
-
-      this.worker = new Worker("/dist/exampleWorkerScript.worker.js");
 
       break;
     case (runStates.PAUSED):
@@ -124,7 +96,6 @@ async function stateChangeCallback(newState) {
       PageVisitingModuleUninitialize();
       webScience.pageNavigation.onPageData.removeListener(this.pageDataListener);
       this.contentScript.unregister();
-      this.worker.terminate();
 
       await browser.storage.local.set({ "state": runStates.PAUSED });
 
@@ -153,3 +124,4 @@ chrome.browserAction.onClicked.addListener(async () =>
 );
 
 // Take no further action until the rallyStateChange callback is called.
+
