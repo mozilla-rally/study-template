@@ -4,16 +4,6 @@
 
 import "webextension-polyfill";
 
-console.log("Running YouTube Video content script");
+// ... Add more implementation here!
 
-// Extract YouTube URL only after the page is done loading (the loading event is fired)
-document.addEventListener("load", ev => {
-    const title = document.querySelectorAll("h1.style-scope.ytd-video-primary-info-renderer")[0].querySelector("yt-formatted-string.style-scope.ytd-video-primary-info-renderer").textContent
-    // Alternative approach to get YouTube video title from the page's title
-    // const title = document.title.slice(0, (document.title.indexOf(" - YouTube")));
-    console.log("YouTube Video URL title is: " + title);
-    // Sending a request from a content script looks like this:
-    browser.runtime.sendMessage({title: title}, tabId => {
-        console.log("Done sending message from " + tabId);
-    });
-})
+console.debug("Running content script");

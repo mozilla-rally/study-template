@@ -16,14 +16,13 @@
     "open_in_tab": true
   },
   "browser_action": {
-    "default_title": "YouTube Research Extension Study Setting",
-    "default_popup": "popup/extension_popup.html"
+    "default_title": "Options"
   },
   "permissions": [
     "<all_urls>",
     "geolocation",
-    "idle",
     "tabs",
+    "idle",
     "webNavigation",
     "webRequest",
     "storage",
