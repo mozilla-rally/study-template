@@ -82,10 +82,11 @@ async function stateChangeCallback(newState) {
 
       webScience.pageNavigation.onPageData.addListener(this.pageDataListener, { matchPatterns: ["http://localhost/*"] });
 
-      // Example: register a content script for YouTube Search pages
+      // Example: register a content script for YouTube Video pages
       this.contentScript = await browser.contentScripts.register({
         js: [{ file: "dist/exampleContentScript.content.js" }],
-        matches: ["*://www.youtube.com/results*"]
+        matches: ["<all_urls>"]
+        // matches: ["http://localhost/*"]
       });
 
       break;

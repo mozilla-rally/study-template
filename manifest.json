@@ -31,8 +31,13 @@
   ],
   "content_scripts": [
     {
-      "matches": ["*://www.youtube.com/*"],
-      "js": ["dist/content/rally-content.js"]
+      "matches": [
+        "http://localhost/*",
+        "https://rally-web-spike.web.app/*"
+      ],
+      "js": [
+        "dist/content/rally-content.js"
+      ]
     }
   ],
   "background": {
