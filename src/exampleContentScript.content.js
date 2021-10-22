@@ -19,9 +19,13 @@ function getYouTubeTitleAndSendMessage() {
         console.log("YouTube Video ID title is: " + videoID);
 
         // Sending a request from a content script (NOT WORKING)
-        browser.runtime.sendMessage({title: title}, tabId => {
-            console.log("Done sending message from " + tabId);
+
+        chrome.runtime.sendMessage({greeting: "hello"}, function(response) {
+            console.log(response.farewell);
         });
+        // chrome.runtime.sendMessage({title: title, videoID: videoID}, function(response) {
+        //     console.log(response.farewell);
+        // });
     }
     console.log("Done running YouTube Video content script");
 }
@@ -38,7 +42,18 @@ const extractYouTubeVideoID = (YouTubeURL) => {
     return videoIdentifier;
 }
 
-getYouTubeTitleAndSendMessage();
+window.addEventListener('load', function () {
+    // console.log('load');
+    //async wait (function triggered after couple of seconds)
+    getYouTubeTitleAndSendMessage();
+});
+
+window.addEventListener('yt-page-data-updated', function () {
+    // console.log('url change');
+    getYouTubeTitleAndSendMessage();
+});
+
+
 
 // const window_loaded_listener_callback = (event) => {
 //     getYouTubeTitleAndSendMessage();
@@ -47,12 +62,12 @@ getYouTubeTitleAndSendMessage();
 //
 // // Extract YouTube URL only after the page is done loading (the loading event is fired)
 // window.addEventListener("load", window_loaded_listener_callback);
-
-browser.runtime.onMessage.addListener(request => {
-    console.log("Message from the background script:");
-    console.log(request.greeting);
-    return Promise.resolve({response: "Hi from content script"});
-});
+//
+// browser.runtime.onMessage.addListener(request => {
+//     console.log("Message from the background script:");
+//     console.log(request.greeting);
+//     return Promise.resolve({response: "Hi from content script"});
+// });
 
 // chrome.runtime.onMessage.addListener(
 //     function(request, sender, sendResponse) {

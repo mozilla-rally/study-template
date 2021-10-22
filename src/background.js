@@ -102,14 +102,14 @@ async function stateChangeCallback(newState) {
         js: [{ file: "dist/exampleContentScript.content.js" }], // Please save the .js file to src/ folder, and Node will automatically transpile .js scripts to dist/
         // matches: ["*//www.youtube.com/watch*"]
         // matches: ["*://*.youtube.com/*"]
-        matches: ["<all_urls>"]
+        matches: ["*://*.youtube.com/*"] // NOTE: if old URL does not match to this case, and there's URL change (without page reload) to the new URL matching this case, extension won't execute content script
       });
 
       this.parseYouTubeSearchContentScript = await browser.contentScripts.register({
         js: [{ file: "dist/parseYouTubeSearch.content.js" }], // Please save the .js file to src/ folder, and Node will automatically transpile .js scripts to dist/
         // matches: ["*//www.youtube.com/watch*"]
         // matches: ["*://*.youtube.com/*"]
-        matches: ["<all_urls>"]
+        matches: ["*://*.youtube.com/*"]
       });
 
 
@@ -151,40 +151,52 @@ chrome.browserAction.onClicked.addListener(async () =>
 
 // Take no further action until the rallyStateChange callback is called.
 
-// Code that manages sending message to content script (NOT WORKING)
-function onError(error) {
-  console.error(`Error: ${error}`);
-}
 
-function sendMessageToTabs(tabs) {
-  for (let tab of tabs) {
-    browser.tabs.sendMessage(
-        tab.id,
-        {greeting: "Hi from background script"}
-    ).then(response => {
-      console.log("Message from the content script:");
-      console.log(response.response);
-    }).catch(onError);
-  }
-}
-
-browser.browserAction.onClicked.addListener(() => {
-  browser.tabs.query({
-    currentWindow: true,
-    active: true
-  }).then(sendMessageToTabs).catch(onError);
-});
-
-browser.tabs.onUpdated.addListener(
-    function(tabId, changeInfo, tab) {
-      // read changeInfo data and do something with it
-      // like send the new url to contentscripts.js
-      if (changeInfo.url) {
-        browser.tabs.query({
-          currentWindow: true,
-          active: true
-        }).then(sendMessageToTabs).catch(onError);
-        console.log("Sent Tab Change Message");
-      }
+chrome.runtime.onMessage.addListener(
+    function(request, sender, sendResponse) {
+      console.log(sender.tab ?
+          "from a content script:" + sender.tab.url :
+          "from the extension");
+      if (request.greeting === "hello")
+        sendResponse({farewell: "goodbye"});
     }
 );
+
+
+// Code that manages sending message to content script (NOT WORKING)
+// function onError(error) {
+//   console.error(`Error: ${error}`);
+// }
+
+// function sendMessageToTabs(tabs) {
+//   for (let tab of tabs) {
+//     browser.tabs.sendMessage(
+//         tab.id,
+//         {greeting: "Hi from background script"}
+//     ).then(response => {
+//       console.log("Message from the content script:");
+//       console.log(response.response);
+//     }).catch(onError);
+//   }
+// }
+//
+// browser.browserAction.onClicked.addListener(() => {
+//   browser.tabs.query({
+//     currentWindow: true,
+//     active: true
+//   }).then(sendMessageToTabs).catch(onError);
+// });
+//
+// browser.tabs.onUpdated.addListener(
+//     function(tabId, changeInfo, tab) {
+//       // read changeInfo data and do something with it
+//       // like send the new url to contentscripts.js
+//       if (changeInfo.url) {
+//         browser.tabs.query({
+//           currentWindow: true,
+//           active: true
+//         }).then(sendMessageToTabs).catch(onError);
+//         console.log("Sent Tab Change Message");
+//       }
+//     }
+// );
