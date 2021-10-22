@@ -9,8 +9,11 @@ console.log("Running YouTube Video content script");
 
 function getYouTubeTitleAndSendMessage() {
     if(document.URL.includes("www.youtube.com/watch?")) {
+        const unixTimestamp = Date.now();
+        const date = new Date(unixTimestamp);
+
         const title = document.querySelectorAll("h1.style-scope.ytd-video-primary-info-renderer")[0].querySelector("yt-formatted-string.style-scope.ytd-video-primary-info-renderer").textContent
-        //const title = "abcdefgh";
+
         // Alternative approach to get YouTube video title from the page's title
         // const title = document.title.slice(0, (document.title.indexOf(" - YouTube")));
         console.log("YouTube Video URL title is: " + title);
@@ -18,18 +21,26 @@ function getYouTubeTitleAndSendMessage() {
         const videoID = extractYouTubeVideoID(document.URL);
         console.log("YouTube Video ID is: " + videoID);
 
-        // Sending a request from a content script (NOT WORKING)
-
-        // chrome.runtime.sendMessage({greeting: "hello"}, function(response) {
-        //     console.log(response.farewell);
-        // });
-        chrome.runtime.sendMessage({type: "YouTube Video", title: title, videoID: videoID}, function(response) {
+        // Sending a message from a content script to background script
+        chrome.runtime.sendMessage({
+            InternalUse: true, // to distinguish my message from other message.
+            timestamp: unixTimestamp,
+            plain_text_time: date.toString(),
+            site: "YouTube",
+            type: "Video",
+            currentURL: document.URL,
+            title: title,
+            videoID: videoID
+        }, function(response) {
             console.log(response.farewell);
         });
     }
     console.log("Done running YouTube Video content script");
 }
 
+// Extract YouTube video ID from a given YouTube Video URL
+// For analytical purpose, YouTube will embed extra information in its url link, which will make us challenging to find out whether a user opens a same video.
+// https://www.youtube.com/watch?t=230&v=MuOe3NM_2Ig&feature=youtu.be -> MuOe3NM_2Ig
 const extractYouTubeVideoID = (YouTubeURL) => {
     const videoIdentifierStartIndex = YouTubeURL.indexOf("v=") + 2;
     let videoIdentifier = "";
@@ -52,29 +63,3 @@ window.addEventListener('yt-page-data-updated', function () {
     // console.log('url change');
     getYouTubeTitleAndSendMessage();
 });
-
-
-
-// const window_loaded_listener_callback = (event) => {
-//     getYouTubeTitleAndSendMessage();
-//     window.removeEventListener("load", window_loaded_listener_callback);
-// }
-//
-// // Extract YouTube URL only after the page is done loading (the loading event is fired)
-// window.addEventListener("load", window_loaded_listener_callback);
-//
-// browser.runtime.onMessage.addListener(request => {
-//     console.log("Message from the background script:");
-//     console.log(request.greeting);
-//     return Promise.resolve({response: "Hi from content script"});
-// });
-
-// chrome.runtime.onMessage.addListener(
-//     function(request, sender, sendResponse) {
-//         console.log(sender.tab ?
-//             "from a content script:" + sender.tab.url :
-//             "from the extension");
-//         if (request.greeting === "hello")
-//             sendResponse({farewell: "goodbye"});
-//     }
-// );
