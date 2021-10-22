@@ -16,16 +16,16 @@ function getYouTubeTitleAndSendMessage() {
         console.log("YouTube Video URL title is: " + title);
 
         const videoID = extractYouTubeVideoID(document.URL);
-        console.log("YouTube Video ID title is: " + videoID);
+        console.log("YouTube Video ID is: " + videoID);
 
         // Sending a request from a content script (NOT WORKING)
 
-        chrome.runtime.sendMessage({greeting: "hello"}, function(response) {
-            console.log(response.farewell);
-        });
-        // chrome.runtime.sendMessage({title: title, videoID: videoID}, function(response) {
+        // chrome.runtime.sendMessage({greeting: "hello"}, function(response) {
         //     console.log(response.farewell);
         // });
+        chrome.runtime.sendMessage({type: "YouTube Video", title: title, videoID: videoID}, function(response) {
+            console.log(response.farewell);
+        });
     }
     console.log("Done running YouTube Video content script");
 }

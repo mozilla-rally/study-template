@@ -157,8 +157,10 @@ chrome.runtime.onMessage.addListener(
       console.log(sender.tab ?
           "from a content script:" + sender.tab.url :
           "from the extension");
-      if (request.greeting === "hello")
+      if (request.type === "YouTube Video") {
+        console.log("received title: " + request.title + " and video id: " + request.videoID);
         sendResponse({farewell: "goodbye"});
+      }
     }
 );
 
