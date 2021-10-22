@@ -105,7 +105,7 @@ async function stateChangeCallback(newState) {
         matches: ["<all_urls>"]
       });
 
-      this.contentScript = await browser.contentScripts.register({
+      this.parseYouTubeSearchContentScript = await browser.contentScripts.register({
         js: [{ file: "dist/parseYouTubeSearch.content.js" }], // Please save the .js file to src/ folder, and Node will automatically transpile .js scripts to dist/
         // matches: ["*//www.youtube.com/watch*"]
         // matches: ["*://*.youtube.com/*"]
@@ -121,7 +121,7 @@ async function stateChangeCallback(newState) {
       exampleModuleUninitialize();
       webScience.pageNavigation.onPageData.removeListener(this.pageDataListener);
       this.contentScript.unregister();
-      this.worker.terminate();
+      this.parseYouTubeSearchContentScript.unregister();
 
       await browser.storage.local.set({ "state": runStates.PAUSED });
 
