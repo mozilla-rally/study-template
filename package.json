@@ -1,5 +1,5 @@
 {
-  "name": "rally-study-template",
+  "name": "youtube_study_extension",
   "version": "0.4.0",
   "scripts": {
     "build": "rollup -c && npm run tailwind",
@@ -53,17 +53,17 @@
   "engines": {
     "node": ">=14.0.0"
   },
-  "description": "This a basic template for a Rally study.",
+  "description": "Facilitate UW research regarding YouTube browsing activities.",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/mozilla-rally/study-template.git"
+    "url": "git+https://github.com/GNU-Linuxer/youtube-study-firefox-extension.git"
   },
   "keywords": [],
-  "author": "Mozilla",
-  "license": "MPL-2.0",
+  "author": "UW",
+  "license": "No License",
   "private": true,
   "bugs": {
-    "url": "https://github.com/mozilla-rally/study-template/issues"
+    "url": "https://github.com/GNU-Linuxer/youtube-study-firefox-extension"
   },
-  "homepage": "https://github.com/mozilla-rally/study-template#readme"
+  "homepage": "https://github.com/GNU-Linuxer/youtube-study-firefox-extension"
 }

@@ -4,6 +4,8 @@
 
 export function initialize() {
     console.log("example module initialized.");
+
+
 }
 
 export function uninitialize() {

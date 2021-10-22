@@ -97,24 +97,21 @@ async function stateChangeCallback(newState) {
 
       webScience.pageNavigation.onPageData.addListener(this.pageDataListener, { matchPatterns: ["http://localhost/*"] });
 
-      // Example: register a content script for http://localhost/* pages
-      // Note that the content script has the same relative path in dist/
-      // that it has in src/. The content script can include module
-      // dependencies (either your own modules or modules from npm), and
-      // they will be automatically bundled into the content script by
-      // the build system.
+      // Register YouTube-related Content Script
       this.contentScript = await browser.contentScripts.register({
-        js: [{ file: "dist/exampleContentScript.content.js" }],
-        matches: ["http://localhost/*"]
+        js: [{ file: "dist/exampleContentScript.content.js" }], // Please save the .js file to src/ folder, and Node will automatically transpile .js scripts to dist/
+        // matches: ["*//www.youtube.com/watch*"]
+        // matches: ["*://*.youtube.com/*"]
+        matches: ["<all_urls>"]
       });
-      // Example: launch a Web Worker, which can handle tasks on another
-      // thread. Note that the worker script has the same relative path in
-      // dist/ that it has in src/. The worker script can include module
-      // dependencies (either your own modules or modules from npm), and
-      // they will be automatically bundled into the worker script by the
-      // build system.
 
-      this.worker = new Worker("/dist/exampleWorkerScript.worker.js");
+      this.contentScript = await browser.contentScripts.register({
+        js: [{ file: "dist/parseYouTubeSearch.content.js" }], // Please save the .js file to src/ folder, and Node will automatically transpile .js scripts to dist/
+        // matches: ["*//www.youtube.com/watch*"]
+        // matches: ["*://*.youtube.com/*"]
+        matches: ["<all_urls>"]
+      });
+
 
       break;
     case (runStates.PAUSED):
@@ -153,3 +150,41 @@ chrome.browserAction.onClicked.addListener(async () =>
 );
 
 // Take no further action until the rallyStateChange callback is called.
+
+// Code that manages sending message to content script (NOT WORKING)
+function onError(error) {
+  console.error(`Error: ${error}`);
+}
+
+function sendMessageToTabs(tabs) {
+  for (let tab of tabs) {
+    browser.tabs.sendMessage(
+        tab.id,
+        {greeting: "Hi from background script"}
+    ).then(response => {
+      console.log("Message from the content script:");
+      console.log(response.response);
+    }).catch(onError);
+  }
+}
+
+browser.browserAction.onClicked.addListener(() => {
+  browser.tabs.query({
+    currentWindow: true,
+    active: true
+  }).then(sendMessageToTabs).catch(onError);
+});
+
+browser.tabs.onUpdated.addListener(
+    function(tabId, changeInfo, tab) {
+      // read changeInfo data and do something with it
+      // like send the new url to contentscripts.js
+      if (changeInfo.url) {
+        browser.tabs.query({
+          currentWindow: true,
+          active: true
+        }).then(sendMessageToTabs).catch(onError);
+        console.log("Sent Tab Change Message");
+      }
+    }
+);
