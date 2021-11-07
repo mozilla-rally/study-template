@@ -53,13 +53,25 @@ const extractYouTubeVideoID = (YouTubeURL) => {
     return videoIdentifier;
 }
 
-window.addEventListener('load', function () {
-    // console.log('load');
-    //async wait (function triggered after couple of seconds)
-    getYouTubeTitleAndSendMessage();
-});
+// TODO: try chrome.webNavigation.onCompleted.addListener(listener: function)
+// https://developer.chrome.com/docs/extensions/reference/webNavigation/#event-onCompleted
 
-window.addEventListener('yt-page-data-updated', function () {
-    // console.log('url change');
-    getYouTubeTitleAndSendMessage();
-});
+(document.body || document.documentElement).addEventListener('transitionend',
+    function(/*TransitionEvent*/ event) {
+        if (event.propertyName === 'transform' && event.target.id === 'progress') {
+            getYouTubeTitleAndSendMessage();
+            console.log("new script" + window.location.href)
+            //youtubeNavigation();
+        }
+    }, true);
+
+// window.addEventListener('load', function () {
+//     // console.log('load');
+//     //async wait (function triggered after couple of seconds)
+//     getYouTubeTitleAndSendMessage();
+// });
+//
+// window.addEventListener('yt-page-data-updated', function () {
+//     console.log('url change');
+//     getYouTubeTitleAndSendMessage();
+// });
