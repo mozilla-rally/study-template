@@ -48,7 +48,7 @@ function parseSearchResults(event)
 
     var sections = document.querySelectorAll("ytd-rich-section-renderer.style-scope.ytd-rich-grid-renderer")
     //console.log("len of sections: " + sections.length)
-    for (var i = 0; i < sections.length; i++) {
+    for (let i = 0; i < sections.length; i++) {
         //console.log(i)
         var title1 = sections[i].querySelector("#title").textContent
         //console.log(title1)
@@ -60,8 +60,8 @@ function parseSearchResults(event)
         // console.log("jjjjjjjjjjjjjjjjjjjjjjjjjjjjjj")
         var pannel_dict = {}
         if (videos_in_pannel.length != 0)
-            for (var j = 0; j < videos_in_pannel.length; j++) {
-                var tmp = {};
+            for (let j = 0; j < videos_in_pannel.length; j++) {
+                let tmp = {};
                 tmp['title'] = videos_in_pannel[j].getAttribute("title")
                 tmp['url'] = videos_in_pannel[j].getAttribute("href")
                 pannel_dict[j] = tmp
@@ -76,15 +76,15 @@ function parseSearchResults(event)
     var videos= document.querySelectorAll("ytd-rich-item-renderer.style-scope.ytd-rich-grid-renderer")
     //console.log("len of videos: " + videos.length)
     var videos_dict = {};
-    for (var i = 0; i < videos.length; i++) {
+    for (let i = 0; i < videos.length; i++) {
         if(!videos[i].querySelector("#video-title-link"))
             continue
         // console.log(videos[i].querySelector("#video-title-link"))
-        title_v = videos[i].querySelector("#video-title-link").getAttribute("title")
+        let title_v = videos[i].querySelector("#video-title-link").getAttribute("title")
         // console.log(title_v)
-        url_v = videos[i].querySelector("#video-title-link").getAttribute("href")
+        let url_v = videos[i].querySelector("#video-title-link").getAttribute("href")
         // console.log(url_v)
-        var tmp = {};
+        let tmp = {};
         tmp['title'] = title_v
         tmp['url'] = url_v
         videos_dict[i] = tmp
