@@ -56,22 +56,13 @@ const extractYouTubeVideoID = (YouTubeURL) => {
 // TODO: try chrome.webNavigation.onCompleted.addListener(listener: function)
 // https://developer.chrome.com/docs/extensions/reference/webNavigation/#event-onCompleted
 
-(document.body || document.documentElement).addEventListener('transitionend',
-    function(/*TransitionEvent*/ event) {
-        if (event.propertyName === 'transform' && event.target.id === 'progress') {
-            getYouTubeTitleAndSendMessage();
-            console.log("new script" + window.location.href)
-            //youtubeNavigation();
-        }
-    }, true);
 
-// window.addEventListener('load', function () {
-//     // console.log('load');
-//     //async wait (function triggered after couple of seconds)
-//     getYouTubeTitleAndSendMessage();
-// });
-//
-// window.addEventListener('yt-page-data-updated', function () {
-//     console.log('url change');
-//     getYouTubeTitleAndSendMessage();
-// });
+
+if (window === top) {
+    chrome.runtime.onMessage.addListener(function(req, sender, sendResponse) {
+        if (req.is_content_script) {
+            getYouTubeTitleAndSendMessage();
+            sendResponse({is_content_script: true});
+        }
+    });
+}

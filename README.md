@@ -26,7 +26,7 @@ This repository provides a template for building browser-based research studies 
               <li>Use <code>chrome.webNavigation.onCompleted</code> event listener </li>
               <li>Use WebScience’s <code>pageTransition.onPageTransitionData</code> event listener (not working, see issue on that row)</li>
             </ul>
-            <div><code>chrome.webNavigation</code> <a href="https://developer.chrome.com/docs/extensions/reference/webNavigation/#event-onCompleted">API documentation</a></div>
+            <div><code>chrome.webNavigation</code> <a href="https://developer.chrome.com/docs/extensions/reference/webNavigation">API documentation</a></div>
             <div>Per <a href="https://mozilla-rally.github.io/web-science/jsdocs/module-pageTransition.html">this API documentation </a>: “webpages and browsers are increasingly limiting when referrers are sent”</div>
         </td>
       </tr>

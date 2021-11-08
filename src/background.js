@@ -165,3 +165,20 @@ chrome.runtime.onMessage.addListener(
         }
     }
 );
+
+function updatePageAction(tabId)
+{
+    chrome.tabs.sendMessage(tabId, {is_content_script: true}, function(response) {
+        if (response.is_content_script) {
+            console.log("Tab received message");
+        }
+    });
+}
+
+// "Guaranteed???" working method: extension will signal content script once its url changes
+chrome.tabs.onUpdated.addListener(function(tabId, change, tab) {
+    console.log("chrome.tabs.onUpdatedListener is fired");
+    if (change.status === "complete") {
+        updatePageAction(tabId);
+    }
+})
