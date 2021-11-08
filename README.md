@@ -2,22 +2,174 @@
 This repository provides a template for building browser-based research studies with the [Rally](https://rally.mozilla.org/) platform and the [WebScience](https://github.com/mozilla-rally/web-science/) library.
 
 # Mozilla Websience API Functionality
+<table>
+  <thead>
+    <tr>
+        <th>Extension API capability</th>
+        <th>Example uses</th>
+        <th>On a regular website (davidxie.net)</th>
+        <th>On YouTube</th>
+        <th>Possible workaround</th>
+      </tr>
+  </thead>
 
-| Extension API capability                                                                                                                                                                                                           | Example uses                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | On a regular website (davidxie.net)                                                                                                                                                                                                                                                                                                                                                                                                | On YouTube                                                                                                                                                                               | Possible workaround                                                                                                                                                                                                                                                                                                                                                                                 |
-| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Get page visiting data when user begin visiting this page and stop visiting this page                                                                                                                                              |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | Working                                                                                                                                                                                                                                                                                                                                                                                                                            | Referral URL is blank                                                                                                                                                                    | Using browser.tabs API to listen to an updated URL<br>Use chrome.webNavigation.onHistoryStateUpdated.addListener((event)=>{}) to capture when URL changes through API<br>Use WebScience’s pageTransition.onPageTransitionData event listener (not working, see issue on that row)<br><br>Per this API documentation page: “webpages and browsers are increasingly limiting when referrers are sent” |
-| Check browser’s idling state and notify when this state changes, which can be used to gather whether user’s paying attention on a page.                                                                                            | function idleStateChangeListener(idleState) {<br>  return console.log("Browser's Idle State: " + idleState);<br>}<br><br>webScience.idle.onStateChanged.addListener(idleStateChangeListener, {detectionInterval: 1})                                                                                                                                                                                                                                                                                                          | Working (web page independent, but took about 3 minutes to observe browser idle state change; this timer is believed to be hard-coded on the browser itself, and there are other factors that would make this time vary).                                                                                                                                                                                                          | Can also use chrome.idle.onStateChanged API                                                                                                                                              |
-| [Listen to Web Extension Event](https://mozilla-rally.github.io/web-science/jsdocs/module-events.html)                                                                                                                             | const pageVisitListener = function(details) {<br>  console.log("Page ID: " + details.pageId + ", Tab ID: " + details.tabId + ", windowID: " + details.windowId);<br>}<br>webScience.pageManager.onPageVisitStart.addListener(pageVisitListener, {privateWindows: false});                                                                                                                                                                                                                                                     | Not Tested (could not figure out creating web extension custom events (not DOM nor extension built-in event))                                                                                                                                                                                                                                                                                                                      |                                                                                                                                                                                          |
-| [Store extension-generated data to local computer, use Associative Array data type (key-value pairs)](https://mozilla-rally.github.io/web-science/jsdocs/module-storage.html)                                                      | Yes (web page independent). Should use this way to store data as user can use extension’s data export function to read it OR parse it into data analyzing programs.<br><br>const exampleStorage = webScience.storage.createKeyValueStorage("exampleName");<br><br>exampleStorage.set("exampleName", {key: 1, value: 2}).then(()=>console.log("Done Saving exampleName local storage"));                                                                                                                                       |                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+  <tbody>
+    <tr>
+        <td>Get page visiting data when user <a href="https://mozilla-rally.github.io/web-science/jsdocs/module-pageManager.onPageVisitStart.html">begin visiting this page</a> and <a href="https://mozilla-rally.github.io/web-science/jsdocs/module-pageManager.onPageVisitStop.html">stop visiting this page</a></td>
+        <td></td>
+        <td>Working</td>
+        <td>Referral URL is blank</td>
+        <td>
+            <ul>
+              <li>Using browser.tabs API to listen to an updated URL</li>
+              <li>Use <code>chrome.webNavigation.onHistoryStateUpdated.addListener((event)=>{})</code> to capture when URL changes through API</li>
+              <li>Use WebScience’s <code>pageTransition.onPageTransitionData</code> event listener (not working, see issue on that row)</li>
+            </ul>
+            <div>Per <a href="https://mozilla-rally.github.io/web-science/jsdocs/module-pageTransition.html">this API documentation </a>: “webpages and browsers are increasingly limiting when referrers are sent”</div>
+        </td>
+      </tr>
+      <tr>
+        <td><a href="https://mozilla-rally.github.io/web-science/jsdocs/module-idle.html">Check browser’s idling state</a> and <a href="https://mozilla-rally.github.io/web-science/jsdocs/module-idle.onStateChanged.html">notify when this state changes</a>, which can be used to gather whether user’s paying attention on a page.</td>
+        <td>
+          <div><code>function idleStateChangeListener(idleState) {return console.log("Browser's Idle State: " + idleState);}</code></div><div>&nbsp</div><div><code>webScience.idle.onStateChanged.addListener(idleStateChangeListener, {detectionInterval: 1})</code></div>
+        </td>
+        <td colspan="2">Working (web page independent, but took about 3 minutes to observe browser idle state change; this timer is believed to be hard-coded on the browser itself, and there are other factors that would make this time vary).</td>
+        <td>Can also use chrome.idle.onStateChanged API</td>
+      </tr>
+      <tr>
+        <td><a href="https://mozilla-rally.github.io/web-science/jsdocs/module-events.html">Listen to Web Extension Event</a></td>
+        <td>
+          <div><code>const pageVisitListener = function(details) {console.log("Page ID: " + details.pageId + ", Tab ID: " + details.tabId + ", windowID: " + details.windowId);}</code></div><div>&nbsp</div><div><code>webScience.pageManager.onPageVisitStart.addListener(pageVisitListener, {privateWindows: false});</code></div>
+        </td>
+        <td colspan="2">Not Tested (could not figure out creating web extension custom events (not DOM nor extension built-in event))</td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><a href="https://mozilla-rally.github.io/web-science/jsdocs/module-storage.html">Store extension-generated data</a> to local computer, use Associative Array data type (key-value pairs)</td>
+        <td colspan="3">
+          <div>Yes (web page independent). Should use this way to store data as user can use extension’s data export function to read it OR parse it into data analyzing programs.</div>
+          <div>&nbsp</div>
+          <div><code>const exampleStorage = webScience.storage.createKeyValueStorage("exampleName");</code></div>
+          <div>&nbsp</div>
+          <div><code>exampleStorage.set("exampleName", {key: 1, value: 2}).then(()=>console.log("Done Saving exampleName local storage"));</code></div>
+        </td>
+        <td></td>
+      </tr>
+      <tr>
+        <td>Detects whether user pauses/resumes data collection.</td>
+        <td colspan="3">Yes (web page independent), this Mozilla extension will send a message when such state changes.</td>
+        <td></td>
+      </tr>
+      <tr>
+        <td>Within background script, <a href="https://mozilla-rally.github.io/web-science/jsdocs/module-messaging.onMessage.html">listen to messages from content script and respond accordingly.</a></td>
+        <td colspan="3">Not tested, I recommend using Firefox extension’s native message-passing APIs, as it can easily send and receive JSON-formatted objects.</td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><a href="https://mozilla-rally.github.io/web-science/jsdocs/module-linkExposure.onLinkExposureData.html">Gather Links</a> (that matches to a pattern) within this webpage</td>
+        <td>
+          <div><code>const linkExposureDataListener = function (details) {console.log(details);}</code></div><div>&nbsp</div><div><code>webScience.linkExposure.onLinkExposureData.addListener(linkExposureDataListener, {linkMatchPatterns: [ "*://*.youtube.com/*" ], privateWindows: true})</code></div>
+        </td>
+        <td colspan="2">
+          <div>Unknown (attempted to use it but no result)</div>
+          <div>&nbsp</div>
+          <div>I do see this WebScience error: <strong>matchPatterns is undefined</strong> in the browser console. I have tried an approach by coping a code of a extension from Stanford but did not solve this issue)</div>
+          <div>&nbsp</div>
+          <div>I’ve also tried creating custom match pattern from following the tutorial <a href="https://mozilla-rally.github.io/web-science/jsdocs/module-matching.html"> here </a>, but still no progress.</div>
+        </td>
+        <td>Use JavaScript native DOM API to query links within this webpage, but it might not work on hrefs that only contain relative link or no link but rather front-end framework page routers.</td>
+      </tr>
+      <tr>
+        <td><a href="https://mozilla-rally.github.io/web-science/jsdocs/module-pageText.onTextParsed.html">Parse article main text</a> from a web page</td>
+        <td>
+          <div><code>// Handle onTextParsed event callbacks
+webScience.pageText.onTextParsed.addListener(async (pageData) => {const surveyUserID = await webScience.userSurvey.getSurveyId() const output = {"type" : "WebScience.articleContents","visitId" : pageData.pageId,"userId" :  ""+surveyUserID,"url" : pageData.url,"title" : pageData.title,"textContent" : pageData.textContent} console.log(output);}, {matchPatterns: destinationDomains});</code></div>
+        </td>
+        <td colspan="2">Same as above</td>
+        <td></td>
+      </tr>
+      <tr>
+        <td>Get details regarding users’ <a href="https://mozilla-rally.github.io/web-science/jsdocs/module-pageNavigation.onPageData.html">basic page-browsing behaviors </a>(such as the amount of time page had user attention and page playing audio)</td>
+        <td>
+          <div><code>const pageDataListener = function(details) {console.log("PageDataListener Response");console.log(details);}</code></div>
+          <div>&nbsp;</div>
+          <div><code>webScience.pageNavigation.onPageData.addListener(pageDataListener, {matchPatterns: destinationDomains, privateWindows: false});</code></div>
+        </td>
+        <td colspan="2">Same as above</td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><a href="https://mozilla-rally.github.io/web-science/jsdocs/module-pageTransition.onPageTransitionData.html">Listen to PageTransition actions</a> (such as URL change through History API)</td>
+        <td>
+          <div><code>const pageTransitionDataListener = function(details) {console.log("PageTransitionDataListener Response")console.log(details);}</code></div>
+          <div>&nbsp;</div>
+          <div><code>webScience.pageTransition.onPageTransitionData.addListener(pageTransitionDataListener, {matchPatterns: destinationDomains, privateWindows: false});</code></div>
+        </td>
+        <td colspan="2">Same as above</td>
+        <td></td>
+      </tr>
+      <tr>
+        <td>Observe whether a user left browser <a href="https://mozilla-rally.github.io/web-science/jsdocs/module-scheduling.onIdleDaily.html">idle for a day</a> or <a href="https://mozilla-rally.github.io/web-science/jsdocs/module-scheduling.onIdleWeekly.html">for a week</a></td>
+        <td>
+          <div><code>webScience.scheduling.onIdleDaily.addListener((event)=>{console.log("You've been idled for a day")});</code></div>
+          <div>&nbsp;</div>
+          <div><code>webScience.scheduling.onIdleWeekly.addListener((event)=>{console.log("You've been idled for a week")});</code></div>
+        </td>
+        <td colspan="2">Testing in-progress (the idle for a day listener is working; expect to receive result for idle for a week listener on November <strong>14</strong>)</td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><a href="https://mozilla-rally.github.io/web-science/jsdocs/module-socialMediaLinkSharing.html">Observe users’ link-sharing on social media</a></td>
+        <td>
+          <div><code>// Social Media Sharing callback </code></div>
+          <div>&nbsp</div>
+          <div><code>const socialMediaShareCallback = function(details) {console.log("From Social Media Sharing callback");console.log(details);}</code></div>
+          <div>&nbsp;</div>
+          <div><code>webScience.socialMediaLinkSharing.onShare(socialMediaShareCallback);</code></div>
+        </td>
+        <td colspan="2">
+          <div><strong>NOT Working:</strong></div>
+          <div>Extension builder will translate</div>
+          <div><code>webScience.socialMediaLinkSharing.onShare(socialMediaShareCallback);</code></div>
+          <div>to</div>
+          <div><code>onShare(socialMediaShareCallback);</code></div>
+          <div>, which would be nowhere defined.</div>
+        </td>
+        <td>Note: API author is making ground-breaking change on this API (see <a href="https://github.com/mozilla-rally/web-science/#api-implementation-progress">here</a>)</td>
+      </tr>
+  </tbody>
+</table>
 
-| Detects whether user pauses/resumes data collection.                                                                                                                                                                               | Yes (web page independent), this Mozilla extension will send a message when such state changes.                                                                                                                                                                                                                                                                                                                                                                                                                               |                                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| [Within background script, listen to messages from content script and respond accordingly.](https://mozilla-rally.github.io/web-science/jsdocs/module-messaging.onMessage.html)                                                    | Not tested, I recommend using Firefox extension’s native message-passing APIs, as it can easily send and receive JSON-formatted objects.                                                                                                                                                                                                                                                                                                                                                                                      |                                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| Gather Links (that matches to a pattern) within this webpage                                                                                                                                                                       | const linkExposureDataListener = function (details) {<br>  console.log(details);<br>}<br><br>webScience.linkExposure.onLinkExposureData.addListener(linkExposureDataListener, {<br>  linkMatchPatterns: \[ "\*://\*.youtube.com/\*" \],<br>  privateWindows: true<br>})                                                                                                                                                                                                                                                       | Unknown (attempted to use it but no result)<br><br>I do see this WebScience error: matchPatterns is undefined in the browser console. I have tried an approach by coping a code of a extension from Stanford but did not solve this issue)<br><br>I’ve also tried creating custom match pattern from following the tutorial here: https://mozilla-rally.github.io/web-science/jsdocs/module-matching.html , but still no progress. | Use JavaScript native DOM API to query links within this webpage, but it might not work on hrefs that only contain relative link or no link but rather front-end framework page routers. |
-| [Parse article main text from a web page](https://mozilla-rally.github.io/web-science/jsdocs/module-pageText.onTextParsed.html)                                                                                                    | // Handle onTextParsed event callbacks<br>webScience.pageText.onTextParsed.addListener(async (pageData) => {<br>  const surveyUserID = await webScience.userSurvey.getSurveyId()<br>  const output = {<br>    "type" : "WebScience.articleContents",<br>    "visitId" : pageData.pageId,<br>    "userId" :  ""+surveyUserID,<br>    "url" : pageData.url,<br>    "title" : pageData.title,<br>    "textContent" : pageData.textContent<br>  }<br>  console.log(output);<br>}, {<br>  matchPatterns: destinationDomains<br>}); | Same as above                                                                                                                                                                                                                                                                                                                                                                                                                      |                                                                                                                                                                                          |
-| [Get details regarding users’ basic page-browsing behaviors (such as the amount of time page had user attention and page playing audio)](https://mozilla-rally.github.io/web-science/jsdocs/module-pageNavigation.onPageData.html) | const pageDataListener = function(details) {<br>  console.log("PageDataListener Response")<br>  console.log(details);<br>}<br>webScience.pageNavigation.onPageData.addListener(pageDataListener, {matchPatterns: destinationDomains, privateWindows: false});                                                                                                                                                                                                                                                                 | Same as above                                                                                                                                                                                                                                                                                                                                                                                                                      |                                                                                                                                                                                          |
-| [Listen to PageTransition actions (such as URL change through History API)](https://mozilla-rally.github.io/web-science/jsdocs/module-pageTransition.onPageTransitionData.html)                                                    | const pageTransitionDataListener = function(details) {<br>  console.log("PageTransitionDataListener Response")<br>  console.log(details);<br>}<br>webScience.pageTransition.onPageTransitionData.addListener(pageTransitionDataListener, {matchPatterns: destinationDomains, privateWindows: false});                                                                                                                                                                                                                         | Same as above                                                                                                                                                                                                                                                                                                                                                                                                                      |                                                                                                                                                                                          |
-| Observe whether a user left browser idle for a day or for a week                                                                                                                                                                   | webScience.scheduling.onIdleDaily.addListener((event)=>{console.log("You've been idled for a day")});<br>webScience.scheduling.onIdleWeekly.addListener((event)=>{console.log("You've been idled for a week")});                                                                                                                                                                                                                                                                                                              | Testing in-progress (expect to receive result on November 7)                                                                                                                                                                                                                                                                                                                                                                       |                                                                                                                                                                                          |
-| Observe users’ link-sharing on social media                                                                                                                                                                                        | // Social Media Sharing callback<br>const socialMediaShareCallback = function(details) {<br>  console.log("From Social Media Sharing callback");<br>  console.log(details);<br>}<br><br>webScience.socialMediaLinkSharing.onShare(socialMediaShareCallback);                                                                                                                                                                                                                                                                  | NOT Working: <br><br>Extension builder will translate <br><br>webScience.socialMediaLinkSharing.onShare(socialMediaShareCallback);<br> <br>to <br><br>onShare(socialMediaShareCallback); <br><br>, which would be nowhere defined.                                                                                                                                                                                                 | [Note: API author is making ground-breaking change on this API (see here)](https://github.com/mozilla-rally/web-science/#api-implementation-progress)                                    |
+[Chrome Extension API Reference](https://developer.chrome.com/docs/extensions/reference/) (can directly use most syntax as-is in Firefox)
+
+Utility features in WebScience that may not be necessary for this project
+
+<table>
+  <thead>
+    <tr>
+        <th>Extension API capability</th>
+      </tr>
+  </thead>
+
+  <tbody>
+    <tr>
+      <td><a href="https://mozilla-rally.github.io/web-science/jsdocs/module-timing.html">Unified high-resolution timing</a></td>
+    </tr>
+    <tr>
+      <td><a href="https://mozilla-rally.github.io/web-science/jsdocs/module-workers.html">Dispatch worker processes</a></td>
+    </tr>
+    <tr>
+      <td><a href="https://mozilla-rally.github.io/web-science/jsdocs/module-userSurvey.html">Prompt or remind participants to complete survey (located on an external URL)</a>. It highly unlikely supports local survey html files.</td>
+    </tr>
+    <tr>
+      <td><a href="https://mozilla-rally.github.io/web-science/jsdocs/module-socialMediaActivity.html">Parse social media posts’ high-level content </a> (supported platforms: Facebook, Twitter, and Reddit). Note: API author is making ground-breaking change on this API (see <a href="https://github.com/mozilla-rally/web-science/#api-implementation-progress">here</a>)</td>
+    </tr>
+    <tr>
+      <td> <a href="https://mozilla-rally.github.io/web-science/jsdocs/module-randomization.html">Assign different values to different study participants</a>, particularly useful for A/B testing and experiment/control groups. I assume this is not needed because this YouTube misinformation study is an observational study not an experiment.</td>
+    </tr>
+  </tbody>
+
+</table>
 
 ## Background Material
 
