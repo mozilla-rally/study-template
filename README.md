@@ -21,7 +21,7 @@ This repository provides a template for building browser-based research studies 
         <td>Referral URL is blank</td>
         <td>
             <ul>
-              <li>Using browser.tabs API to listen to an updated URL</li>
+              <li>Using <code>browser.tabs</code> API to listen to an updated URL (requires tabs permission declared in the extension manifest file)</li>
               <li>Use <code>chrome.webNavigation.onHistoryStateUpdated.addListener((event)=>{})</code> to capture when URL changes through API</li>
               <li>Use WebScience’s <code>pageTransition.onPageTransitionData</code> event listener (not working, see issue on that row)</li>
             </ul>
@@ -34,7 +34,7 @@ This repository provides a template for building browser-based research studies 
           <div><code>function idleStateChangeListener(idleState) {return console.log("Browser's Idle State: " + idleState);}</code></div><div>&nbsp</div><div><code>webScience.idle.onStateChanged.addListener(idleStateChangeListener, {detectionInterval: 1})</code></div>
         </td>
         <td colspan="2">Working (web page independent, but took about 3 minutes to observe browser idle state change; this timer is believed to be hard-coded on the browser itself, and there are other factors that would make this time vary).</td>
-        <td>Can also use chrome.idle.onStateChanged API</td>
+        <td>Can also use <code>chrome.idle.onStateChanged</code> API</td>
       </tr>
       <tr>
         <td><a href="https://mozilla-rally.github.io/web-science/jsdocs/module-events.html">Listen to Web Extension Event</a></td>
