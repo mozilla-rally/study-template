@@ -117,7 +117,7 @@ webScience.pageText.onTextParsed.addListener(async (pageData) => {const surveyUs
           <div>&nbsp;</div>
           <div><code>webScience.scheduling.onIdleWeekly.addListener((event)=>{console.log("You've been idled for a week")});</code></div>
         </td>
-        <td colspan="2">Testing in-progress (the idle for a day listener is working; expect to receive result for idle for a week listener on November <strong>14</strong>)</td>
+        <td colspan="2">Both idle for a day listener and idle for a week listener are working</td>
         <td></td>
       </tr>
       <tr>
