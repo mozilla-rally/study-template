@@ -162,6 +162,8 @@ chrome.runtime.onMessage.addListener(
             browsingHistory.push(request);
             console.log(browsingHistory);
             sendResponse({farewell: "goodbye"});
+        } else if (request.monitorPageLoadComplete) {
+            console.log("Background script began listening to YT Search Page");
         }
     }
 );

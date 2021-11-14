@@ -44,18 +44,14 @@ const decodeGoogleSearchQuery = (googleYouTubeSearchQuery) => {
 // YouTube Search Page will only return top 4 results if the page is not fully loaded
 // Extract YouTube Search Result after 2 seconds timeout (need a better solution to detect YouTubeSearchResultElem stopped loading)
 const triggerLoadListener = function (){
-    // Extract the search result container itself
-    // YouTubeSearchResultElem = document.querySelector("#contents.style-scope.ytd-item-section-renderer");
-    // YouTubeSearchResultElem.addEventListener("onload", parseSearchResults);
-    loadingTimeOut = setTimeout(parseSearchResults, 2000);
+    window.setTimeout(parseSearchResults, 2000);
 }
 
-
-function parseSearchResults(event)
+function parseSearchResults()
 {
     // YouTubeSearchResultElem.removeEventListener('onload', parseSearchResults);
-    clearTimeout(loadingTimeOut);
-
+    // clearTimeout(loadingTimeOut);
+    chrome.webNavigation.onCompleted.removeListener(parseSearchResults);
     var videos = document.querySelectorAll("a#video-title")
     console.log(videos)
     console.log("number of videos: " + videos.length)
@@ -77,7 +73,9 @@ window.addEventListener('load', function () {
     getYouTubeSearchAndSendMessage();
 });
 
-window.addEventListener('yt-page-data-updated', function () {
-    // console.log('url change');
-    getYouTubeSearchAndSendMessage();
-});
+
+
+// window.addEventListener('yt-page-data-updated', function () {
+//     // console.log('url change');
+//     getYouTubeSearchAndSendMessage();
+// });
