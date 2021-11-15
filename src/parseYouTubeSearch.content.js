@@ -162,22 +162,78 @@ function extractYouTubeSearchQuery(YouTubeURL) {
 
     // Documentation regarding decode Google's search URL query to original search content (https://developers.google.com/custom-search/docs/xml_results_appendices?hl=en#url-escaping)
     // First, we need to replace all instances of "+" with " " (a whitespace), and then we can run decodeURIComponent()
-    return decodeURIComponent(searchQuery.replaceAll("+", " "));
+    let decodedURI = decodeURIComponent(searchQuery.replaceAll("+", " "));
+
+    // Replace (use let string = '\"' to assign \" to a string variable, or use String.raw() method)
+    // \\ with \
+    // \" with "
+    // \' with '
+    // decodedURI = decodedURI.replaceAll("\\\\", "\\");
+    decodedURI = decodedURI.replaceAll("\\\"", "\"");
+    decodedURI = decodedURI.replaceAll("\\'", "'");
+    return decodedURI;
+}
+
+
+// This function will extract the googleadservices.com URL that contains YouTube URL to the YouTube URL original form
+// For instance, https://www.googleadservices.com/pagead/...UA&adurl=https://www.youtube.com/watch%3Fv%3DNPkl8G8qy1g&ctype=21&video_id=NPkl8G8qy1g&client=ca-pub-6219811747049371
+function extractYouTubeVideoFromGoogleAdLink(googleAdLink) {
+    //https://www.youtube.com/watch%3Fv%3DNPkl8G8qy1g
+    if(googleAdLink.startsWith("https://www.googleadservices.com") || googleAdLink.startsWith("https://www.googleadservices.com")) {
+        const youTubeLinkStartIndex = googleAdLink.indexOf("&adurl=") + 7;
+        let youTubeLink = "";
+        if (googleAdLink.includes("&", youTubeLinkStartIndex)) {
+            const youTubeLinkEndIndex = googleAdLink.indexOf("&", youTubeLinkStartIndex);
+            youTubeLink = googleAdLink.slice(youTubeLinkStartIndex, youTubeLinkEndIndex);
+        } else {
+            youTubeLink = googleAdLink.slice(youTubeLinkStartIndex);
+        }
+        if(youTubeLink.startsWith("https://www.youtube.com") || youTubeLink.startsWith("http://www.youtube.com") ) {
+            if (youTubeLink.includes("/watch?")) {
+                console.log("Encountered Google Ad that contains Video Page at " + URL);
+                return extractYouTubeVideoID(youTubeLink);
+            }
+        }
+    } else {
+        console.log("This is not a Google AD Service URL");
+    }
 }
 
 function parseSearchResultsAndSendMessage() {
     clearTimeout(searchLoadingTimeOut);
+    const search_results = [];
+
+    // Promoted Videos
+    const promotedVideo = document.querySelectorAll("ytd-promoted-video-renderer");
+    for (let j = 0; j < promotedVideo.length; j++) {
+        const tmp = {};
+        const textContainer = promotedVideo[j].querySelector("#endpoint");
+        tmp['title'] = textContainer.querySelector("#video-title").getAttribute("title");
+        // We're not sure whether it's encoded with Google Ad Service
+        const targetURL = textContainer.getAttribute("href");
+        if(targetURL.startsWith("https://www.googleadservices.com") || targetURL.startsWith("https://www.googleadservices.com")) {
+            tmp['videoID'] = extractYouTubeVideoFromGoogleAdLink(targetURL);
+        } else if(targetURL.includes("/watch?") && (targetURL.startsWith("https://www.youtube.com") || targetURL.startsWith("http://www.youtube.com"))) {
+            tmp['videoID'] = extractYouTubeVideoID(promotedVideo[j].getAttribute("href"));
+        } else {
+            tmp['externalURL'] = targetURL;
+        }
+        tmp['isPromoted'] = true;
+        search_results.push(tmp);
+    }
+
+    // Regular result
     const videos = document.querySelectorAll("a#video-title");
     // console.log(videos)
     // console.log("number of videos: " + videos.length)
-    const search_results = {};
+
     for (let j = 0; j < videos.length; j++) {
         const tmp = {};
         //console.log(videos[j])
         //console.log("bb "+ videos[j].getAttribute("title"))
         tmp['title'] = videos[j].getAttribute("title");
         tmp['videoID'] = extractYouTubeVideoID(videos[j].getAttribute("href"));
-        search_results[j] = tmp
+        search_results.push(tmp);
     }
     // console.log(search_results);
 
@@ -207,12 +263,41 @@ function parseSearchResultsAndSendMessage() {
  *  YouTube Home Page data extraction functions
  */
 
-// This function that will trigger extractYTHome() function with 2-second delay
+// This function that will trigger extractYTHome() function with 5-second delay
 function getYTHome() {
     clearTimeout(homeLoadingTimeOut);
-    homeLoadingTimeOut = window.setTimeout(extractYTHome, 2000);
+    homeLoadingTimeOut = window.setTimeout(extractYTHome, 5000);
 }
 
 function extractYTHome() {
-    console.log("YouTube Home Script Goes Here");
+    const firstLevelContentElem = document.querySelector("#content");
+    const secondLevelContentElem = firstLevelContentElem.querySelector("#contents");
+    const videoBoxes = secondLevelContentElem.querySelectorAll("ytd-rich-grid-media");
+
+    const recommendVideos = {};
+    // Loop through every video box
+    for (let j = 0; j < videoBoxes.length; j++) {
+        const tmp = {};
+        //console.log(videos[j])
+        //console.log("bb "+ videos[j].getAttribute("title"))
+        tmp['title'] = videoBoxes[j].querySelector("#video-title-link").getAttribute("title");
+        tmp['videoID'] = extractYouTubeVideoID(videoBoxes[j].querySelector("#video-title-link").getAttribute("href"));
+        recommendVideos[j] = tmp
+    }
+
+    const unixTimestamp = Date.now();
+    const date = new Date(unixTimestamp);
+    // Sending a message from a content script to background script
+    chrome.runtime.sendMessage({
+        InternalUse: true, // to distinguish my message from other message.
+        timestamp: unixTimestamp,
+        plain_text_time: date.toString(),
+        site: "YouTube",
+        type: "Home",
+        currentURL: document.URL,
+        recommendedVideo: recommendVideos
+    }, function (response) {
+        console.log(response.farewell);
+    });
+    console.log("Done running YouTube Home content script");
 }
