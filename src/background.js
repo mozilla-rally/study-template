@@ -97,19 +97,12 @@ async function stateChangeCallback(newState) {
 
             webScience.pageNavigation.onPageData.addListener(this.pageDataListener, { matchPatterns: ["http://localhost/*"] });
 
-            // Register YouTube-related Content Script
+            // Register YouTube-related Content Script (decide to place all YouTube related data gathering in 1 content script since background script will send message to re-run functions in the content script when URL changes without page reload)
             this.contentScript = await browser.contentScripts.register({
-                js: [{ file: "dist/exampleContentScript.content.js" }], // Please save the .js file to src/ folder, and Node will automatically transpile .js scripts to dist/
-                // matches: ["*//www.youtube.com/watch*"]
-                // matches: ["*://*.youtube.com/*"]
-                matches: ["*://*.youtube.com/*"] // NOTE: if old URL does not match to this case, and there's URL change (without page reload) to the new URL matching this case, extension won't execute content script
-            });
-
-            this.parseYouTubeSearchContentScript = await browser.contentScripts.register({
                 js: [{ file: "dist/parseYouTubeSearch.content.js" }], // Please save the .js file to src/ folder, and Node will automatically transpile .js scripts to dist/
                 // matches: ["*//www.youtube.com/watch*"]
                 // matches: ["*://*.youtube.com/*"]
-                matches: ["*://*.youtube.com/*"]
+                matches: ["*://*.youtube.com/*"] // NOTE: if old URL does not match to this case, and there's URL change (without page reload) to the new URL matching this case, extension won't execute content script
             });
 
 
@@ -152,6 +145,7 @@ chrome.browserAction.onClicked.addListener(async () =>
 // Take no further action until the rallyStateChange callback is called.
 const browsingHistory = [];
 
+
 chrome.runtime.onMessage.addListener(
     function(request, sender, sendResponse) {
         console.log(sender.tab ?
@@ -168,6 +162,7 @@ chrome.runtime.onMessage.addListener(
     }
 );
 
+// Function that sends message to content script to the tab that has YouTube URL change
 function updatePageAction(tabId)
 {
     chrome.tabs.sendMessage(tabId, {is_content_script: true}, function(response) {
