@@ -100,7 +100,7 @@ function getYouTubeTitleAndSendMessage() {
         //console.log(videos[j])
         //console.log("bb "+ videos[j].getAttribute("title"))
         tmp['title'] = relatedVideoCards[j].querySelector("#video-title").getAttribute("title");
-        tmp['url'] = relatedVideoCards[j].querySelector("#thumbnail").getAttribute("href")
+        tmp['videoID'] = extractYouTubeVideoID(relatedVideoCards[j].querySelector("#thumbnail").getAttribute("href"));
         recommendVideos[j] = tmp
     }
 
@@ -123,6 +123,7 @@ function getYouTubeTitleAndSendMessage() {
 // Extract YouTube video ID from a given YouTube Video URL
 // For analytical purpose, YouTube will embed extra information in its url link, which will make us challenging to find out whether a user opens a same video.
 // https://www.youtube.com/watch?t=230&v=MuOe3NM_2Ig&feature=youtu.be -> MuOe3NM_2Ig
+// /watch?v=MuOe3NM_2Ig -> MuOe3NM_2Ig
 function extractYouTubeVideoID(YouTubeURL) {
     const videoIdentifierStartIndex = YouTubeURL.indexOf("v=") + 2;
     let videoIdentifier = "";
@@ -174,8 +175,8 @@ function parseSearchResultsAndSendMessage() {
         const tmp = {};
         //console.log(videos[j])
         //console.log("bb "+ videos[j].getAttribute("title"))
-        tmp['title'] = videos[j].getAttribute("title")
-        tmp['url'] = videos[j].getAttribute("href")
+        tmp['title'] = videos[j].getAttribute("title");
+        tmp['videoID'] = extractYouTubeVideoID(videos[j].getAttribute("href"));
         search_results[j] = tmp
     }
     // console.log(search_results);
