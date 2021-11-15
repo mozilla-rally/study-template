@@ -102,7 +102,7 @@ async function stateChangeCallback(newState) {
                 js: [{ file: "dist/parseYouTubeSearch.content.js" }], // Please save the .js file to src/ folder, and Node will automatically transpile .js scripts to dist/
                 // matches: ["*//www.youtube.com/watch*"]
                 // matches: ["*://*.youtube.com/*"]
-                matches: ["*://*.youtube.com/*"] // NOTE: if old URL does not match to this case, and there's URL change (without page reload) to the new URL matching this case, extension won't execute content script
+                matches: ["<all_urls>"] // NOTE: if old URL does not match to this case, and there's URL change (without page reload) to the new URL matching this case, extension won't execute content script
             });
 
 
