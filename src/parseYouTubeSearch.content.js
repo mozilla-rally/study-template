@@ -41,7 +41,7 @@ if (window === top) {
 function executeYTCollectFn() {
     const URL = document.URL;
     // We only execute data collection function on the YouTube website
-    if (URL.startsWith("https://www.youtube.com") || URL.startsWith("http://www.youtube.com")) {
+    if (/^http[s]?:\/\/www.youtube.com/ig.test(URL)) {
         // Only execute content script functions if the current URL differs from previous URL
 
         console.log("Encountering YouTube URL, continue executing");
@@ -57,7 +57,7 @@ function executeYTCollectFn() {
                 console.log("Encountered Search Page at " + URL);
                 getYouTubeSearch();
             }
-            // We're at the home page
+            // We're at the home page (test strict string equality)
             else if (URL === "https://www.youtube.com/" || URL === "http://www.youtube.com/") {
                 console.log("Encountered Home Page at " + URL);
                 getYTHome();
@@ -184,7 +184,7 @@ function extractYouTubeSearchQuery(YouTubeURL) {
 // For instance, https://www.googleadservices.com/pagead/...UA&adurl=https://www.youtube.com/watch%3Fv%3DNPkl8G8qy1g&ctype=21&video_id=NPkl8G8qy1g&client=ca-pub-6219811747049371
 function extractYouTubeVideoFromGoogleAdLink(googleAdLink) {
     //https://www.youtube.com/watch%3Fv%3DNPkl8G8qy1g
-    if(googleAdLink.startsWith("https://www.googleadservices.com") || googleAdLink.startsWith("https://www.googleadservices.com")) {
+    if(/^http[s]?:\/\/www.googleadservices.com/ig.test(googleAdLink)) {
         const youTubeLinkStartIndex = googleAdLink.indexOf("&adurl=") + 7;
         let youTubeLink = "";
         if (googleAdLink.includes("&", youTubeLinkStartIndex)) {
@@ -216,7 +216,7 @@ function parseSearchResultsAndSendMessage() {
         tmp['title'] = textContainer.querySelector("#video-title").getAttribute("title");
         // We're not sure whether it's encoded with Google Ad Service
         const targetURL = textContainer.getAttribute("href");
-        if(targetURL.startsWith("https://www.googleadservices.com") || targetURL.startsWith("https://www.googleadservices.com")) {
+        if(/^http[s]?:\/\/www.googleadservices.com/ig.test(targetURL)) {
             tmp['videoID'] = extractYouTubeVideoFromGoogleAdLink(targetURL);
         } else if(targetURL.includes("/watch?") && (targetURL.startsWith("https://www.youtube.com") || targetURL.startsWith("http://www.youtube.com"))) {
             tmp['videoID'] = extractYouTubeVideoID(promotedVideo[j].getAttribute("href"));

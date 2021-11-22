@@ -145,13 +145,14 @@ chrome.browserAction.onClicked.addListener(async () =>
 // Take no further action until the rallyStateChange callback is called.
 const browsingHistory = [];
 // We need to record one meaningful URL before user's YouTube visit and one meaningful URL after user's YouTube visit
-const urlBeforeYouTube = []; // continue record URL chain if we discover excludedURL type that attempts to scramble our analysis
-const urlAfterYouTube = [];
+let navigateToOrAwayFromYoutube = "nil"; // used values: "To" , "Away" , "nil"
+let urlBeforeYouTube = []; // continue record URL chain if we discover excludedURL type that attempts to scramble our analysis
+let urlAfterYouTube = []; // Note: index 0 of this array is the last YouTube URL before user leaving YouTube to simplify record-keeping code
 
 const tabIdToPreviousUrl = {};
 
 // Can not use webScience.pageManager.onPageVisitStart.addListener to document URL before and after YouTube since it only document the domain name before YouTube instead of actual page
-// Such as it only shows https://www.google.com/ as the referrer of a YouTube video instead of https://www.google.com/search?q=mc-21+flight+testing&client=firefox-b-1-d&ei=SfuaYZ6EE5nP0PEP0JOIyAU&ved=0ahUKEwjezM2m8ar0AhWZJzQIHdAJAlkQ4dUDCA0&uact=5&oq=mc-21+flight+testing&gs_lcp=Cgdnd3Mtd2l6EAMyBQghEKABOgsIABCxAxCwAxCRAjoJCAAQsAMQBxAeOgsIABCABBCxAxCwAzoOCAAQsQMQgwEQsAMQkQI6CwgAEIAEELEDEIMBOggIABCABBCxAzoRCC4QgAQQsQMQgwEQxwEQowI6DgguEIAEELEDEMcBEKMCOg4ILhCxAxCDARDHARCjAjoICC4QsQMQgwE6CwguEIAEEMcBEKMCOgUIABCABDoNCC4QsQMQxwEQowIQQzoHCAAQsQMQQzoECC4QQzoECAAQQzoLCC4QgAQQsQMQgwE6CwguEIAEEMcBEK8BOgsILhCABBDHARDRAzoGCAAQFhAeSgQIQRgBUIoHWKImYIQnaARwAHgAgAFziAHWDZIBBDIxLjKYAQCgAQHIAQrAAQE&sclient=gws-wiz
+// Such as it only shows https://www.google.com/ as the referrer when I click on YouTube video (within search result) instead of https://www.google.com/search?q=mc-21+flight+testing&client=firefox-b-1-d&ei=SfuaYZ6EE5nP0PEP0JOIyAU&ved=0ahUKEwjezM2m8ar0AhWZJzQIHdAJAlkQ4dUDCA0&uact=5&oq=mc-21+flight+testing&gs_lcp=Cgdnd3Mtd2l6EAMyBQghEKABOgsIABCxAxCwAxCRAjoJCAAQsAMQBxAeOgsIABCABBCxAxCwAzoOCAAQsQMQgwEQsAMQkQI6CwgAEIAEELEDEIMBOggIABCABBCxAzoRCC4QgAQQsQMQgwEQxwEQowI6DgguEIAEELEDEMcBEKMCOg4ILhCxAxCDARDHARCjAjoICC4QsQMQgwE6CwguEIAEEMcBEKMCOgUIABCABDoNCC4QsQMQxwEQowIQQzoHCAAQsQMQQzoECC4QQzoECAAQQzoLCC4QgAQQsQMQgwE6CwguEIAEEMcBEK8BOgsILhCABBDHARDRAzoGCAAQFhAeSgQIQRgBUIoHWKImYIQnaARwAHgAgAFziAHWDZIBBDIxLjKYAQCgAQHIAQrAAQE&sclient=gws-wiz
 
 chrome.runtime.onMessage.addListener(
     function (request, sender, sendResponse) {
@@ -171,9 +172,12 @@ chrome.runtime.onMessage.addListener(
 
 // A function that will return true/false depends on whether we should include meaningful URLs,
 // example URLs that we should exclude is Google's search result link analysis URL and FaceBook external link URL redirect
+
+// Use case: for a lot of times, when we click on a YouTube link (or external site on YouTube), you're actually visiting
+// a tracker URL which will automatically redirect you to actual site. We need to record actual site not tracker URL.
 function execludedURLType(urlInput) {
     // Exclude non http:// and https:// page, such as about:blank, mail://, tel://, or moz-extension://
-    if (!urlInput.match(/http[s]?:\/\//ig)) {
+    if (!/^http[s]?:\/\//ig.test(urlInput)) {
         return "Non-http(s) page, ignoring";
     }
 
@@ -190,7 +194,7 @@ function execludedURLType(urlInput) {
 
     // Filter another kind of Google Ad Link URL, such as https://pagead2.googlesyndication.com/pcs/activeview?xai=AKAOjsuR5JAvkFVvMuX8wfOyhMwG88PjLgRYVKG8L4B0J1NrMhf3Lbtit5nDnvRErXyPHZFyZK79vtrYxfivJNed_kuOX1KlS1GFkW0w8HSudEi494TOBZnHIg&sai=AMfl-YQaqJSdfqek9yKzy3esFZ0QnsH-gkc8JlRUdLGxheC3st0jJsRxQVJaKL5klI2VBXbVmbyi6TrG-Ich&sig=Cg0ArKJSzHDyov5OtJHGEAE&acvw=[VIEWABILITY]&v=2.20211119.01.00
     // It will return true if URL contains googlesyndication.com
-    if (urlInput.match(/^https:\/\/.+googlesyndication.com\//ig)) {
+    if (/^https:\/\/.+googlesyndication.com\//ig.test(urlInput)) {
         return "Google Ad External URL (Type Two)";
     }
 
@@ -201,12 +205,12 @@ function execludedURLType(urlInput) {
 
     // Filter Bing's first Ad redirect, such as https://www.bing.com/aclk?ld=e8QXzQGUIf2mnB_o6ea-NvOTVUCUy_fsb0wbrFqREmXev5yTGam5PXunvHOt8deFdqcB3CbmvWuqE7od_Uffr05F1rRq4rcshJ-e40nJNq7pQlVjAQS79L0vydHP6Odh-_f74znC6s9z16w1o9B104xdaGR0jh0KeYpVUhwsMr77dl6HuvanoDhqEVO9OxWD-twnpRWQ&u=aHR0cHMlM2ElMmYlMmZwaXhlbC5ldmVyZXN0dGVjaC5uZXQlMmY0NDIyJTJmY3ElM2Zldl9zaWQlM2QxMCUyNmV2X2xuJTNkYW1hem9uJTI1MjBhd3MlMjZldl9sdHglM2QlMjZldl9seCUzZGt3ZC03MTY3NTAxMTA2NTYzMyUzYWxvYy0xOTAlMjZldl9jcnglM2Q3MTY3NDU2NzQ5OTc0MCUyNmV2X210JTNkZSUyNmV2X2R2YyUzZGMlMjZldl9waHklM2Q3MTMyOCUyNmV2X2xvYyUzZCUyNmV2X2N4JTNkMzg4MjgwNzUyJTI2ZXZfYXglM2QxMTQ2NzkxMzc1MjY5MDMzJTI2ZXZfZXglM2QlMjZldl9lZmlkJTNkNmIxNWY1MGM0MjQzMThhYWVkYTA5NDk2YWI5MjQ3YmQlM2FHJTNhcyUyNnVybCUzZGh0dHBzJTI1M0ElMjUyRiUyNTJGYXdzLmFtYXpvbi5jb20lMjUyRmZyZWUlMjUyRiUyNTNGdHJrJTI1M0Rwc19hMTM0cDAwMDAwNnBrbGZBQUElMjUyNnRya0NhbXBhaWduJTI1M0RhY3FfcGFpZF9zZWFyY2hfYnJhbmQlMjUyNnNjX2NoYW5uZWwlMjUzRHBzJTI1MjZzY19jYW1wYWlnbiUyNTNEYWNxdWlzaXRpb25fVVMlMjUyNnNjX3B1Ymxpc2hlciUyNTNEQmluZyUyNTI2c2NfY2F0ZWdvcnklMjUzRGNvcmUlMjUyNnNjX2NvdW50cnklMjUzRFVTJTI1MjZzY19nZW8lMjUzRE5BTUVSJTI1MjZzY19vdXRjb21lJTI1M0RhY3ElMjUyNnNjX2RldGFpbCUyNTNEYW1hem9uJTI1MjUyMGF3cyUyNTI2c2NfY29udGVudCUyNTNEQW1hem9uJTI1MjUyMEFXU19lJTI1MjZzY19tYXRjaHR5cGUlMjUzRGUlMjUyNnNjX3NlZ21lbnQlMjUzRCUyNTI2c2NfbWVkaXVtJTI1M0RBQ1EtUCUyNTdDUFMtQkklMjU3Q0JyYW5kJTI1N0NEZXNrdG9wJTI1N0NTVSUyNTdDQVdTJTI1N0NDb3JlJTI1N0NVUyUyNTdDRU4lMjU3Q1RleHQlMjUyNnNfa3djaWQlMjUzREFMITQ0MjIhMTAhNzE2NzQ1Njc0OTk3NDAhNzE2NzUwMTEwNjU2MzMlMjUyNnNfa3djaWQlMjUzREFMITQ0MjIhMTAhNzE2NzQ1Njc0OTk3NDAhNzE2NzUwMTEwNjU2MzMlMjUyNmVmX2lkJTI1M0Q2YjE1ZjUwYzQyNDMxOGFhZWRhMDk0OTZhYjkyNDdiZCUyNTNBRyUyNTNBcw&rlid=6b15f50c424318aaeda09496ab9247bd
     if (urlInput.startsWith("https://www.bing.com/aclk?")) {
-        return "Bing's Ad first redirect";
+        return "Bing's Ad redirect (Type One)";
     }
 
     // Filter Bing's secondary Ad Redirect, such as https://pixel.everesttech.net/4422/cq?ev_sid=10&ev_ln=amazon%20aws&ev_ltx=&ev_lx=kwd-71675011065633:loc-190&ev_crx=71674567499740&ev_mt=e&ev_dvc=c&ev_phy=71328&ev_loc=&ev_cx=388280752&ev_ax=1146791375269033&ev_ex=&ev_efid=6b15f50c424318aaeda09496ab9247bd:G:s&url=https%3A%2F%2Faws.amazon.com%2Ffree%2F%3Ftrk%3Dps_a134p000006pklfAAA%26trkCampaign%3Dacq_paid_search_brand%26sc_channel%3Dps%26sc_campaign%3Dacquisition_US%26sc_publisher%3DBing%26sc_category%3Dcore%26sc_country%3DUS%26sc_geo%3DNAMER%26sc_outcome%3Dacq%26sc_detail%3Damazon%2520aws%26sc_content%3DAmazon%2520AWS_e%26sc_matchtype%3De%26sc_segment%3D%26sc_medium%3DACQ-P%7CPS-BI%7CBrand%7CDesktop%7CSU%7CAWS%7CCore%7CUS%7CEN%7CText%26s_kwcid%3DAL!4422!10!71674567499740!71675011065633%26s_kwcid%3DAL!4422!10!71674567499740!71675011065633%26ef_id%3D6b15f50c424318aaeda09496ab9247bd%3AG%3As
     if (urlInput.startsWith("https://pixel.everesttech.net")) {
-        return "Bing's Ad secondary redirect";
+        return "Bing's Ad redirect (Type Two)";
     }
 
     return "Regular URL";
@@ -235,30 +239,102 @@ chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
 
         // Code that fetches previous URL within chrome.tabs.onUpdated listener
         // is adapted from https://stackoverflow.com/questions/33770825/get-previous-url-from-chrome-tabs-onupdated
-        var previousUrl = "";
-        if (tabId in tab) {
-            previousUrl = tabIdToPreviousUrl[tabId];
-        }
-        // If the domain is different perform action.
+        let previousUrl = tabIdToPreviousUrl[tabId];
+
+        // If URL is indeed changed, continue processing
         if (previousUrl !== changeInfo.url) {
-            // do something
+            // console.log(tabIdToPreviousUrl);
+            console.log(previousUrl + " → " + changeInfo.url);
+
+            // If previous URL is not YouTube and current URL is YouTube, record this previous URL as URL before users visiting YouTube
+            if (!/^http[s]?:\/\/www.youtube.com/ig.test(previousUrl) && /^http[s]?:\/\/www.youtube.com/ig.test(changeInfo.url)) {
+                console.log("Triggered condition 1: If previous URL is not YouTube and current URL is YouTube, record this previous URL as URL before users visiting YouTube")
+                urlBeforeYouTube.push(changeInfo.url);
+                navigateToOrAwayFromYoutube = "To";
+
+                const unixTimestamp = Date.now();
+                const date = new Date(unixTimestamp);
+                browsingHistory.push({
+                    timestamp: unixTimestamp,
+                    plain_text_time: date.toString(),
+                    prevURL: urlBeforeYouTube[0],
+                    succeedingYouTubeURL: changeInfo.url});
+
+                urlAfterYouTube = [];
+                navigateToOrAwayFromYoutube = "nil";
+            }
+
+            // If previous URL is YouTube and current URL is not YouTube, record the succeeding URL after leaving YouTube
+            else if (/^http[s]?:\/\/www.youtube.com/ig.test(previousUrl) && !/^http[s]?:\/\/www.youtube.com/ig.test(changeInfo.url)) {
+                console.log("Triggered condition 2: If previous URL is YouTube and current URL is not YouTube, record the succeeding URL after leaving YouTube.");
+                urlAfterYouTube.push(previousUrl, changeInfo.url);
+                navigateToOrAwayFromYoutube = "Away";
+            }
+
+            // If both previous URL and current URL is YouTube, clear temporary record
+            if (/^http[s]?:\/\/www.youtube.com/ig.test(previousUrl) &&
+                /^http[s]?:\/\/www.youtube.com/ig.test(changeInfo.url)) {
+                console.log("Triggered condition 3: If both previous URL and current URL is YouTube, clear temporary record");
+                urlBeforeYouTube = [];
+                urlAfterYouTube = [];
+                navigateToOrAwayFromYoutube = "nil";
+            }
+
+            // If neither previous URL nor current URL is YouTube or analytical URL, clear temporary record
+            else if (!/^http[s]?:\/\/www.youtube.com/ig.test(previousUrl) &&
+                    !/^http[s]?:\/\/www.youtube.com/ig.test(changeInfo.url) &&
+                    execludedURLType(previousUrl) === "Regular URL" &&
+                    changeInfo.url === "Regular URL") {
+                console.log("Triggered condition 4: If neither previous URL nor current URL is YouTube or analytical URL, clear temporary record");
+                urlBeforeYouTube = [];
+                urlAfterYouTube = [];
+                navigateToOrAwayFromYoutube = "nil";
+            }
+
+            // If previous URL is not YouTube and current URL is an analytical URL, continue appending to urlBeforeYouTube
+            // in case URL after real URL is YouTube
+            else if (!/^http[s]?:\/\/www.youtube.com/ig.test(previousUrl) && execludedURLType(changeInfo.url) !== "Regular URL") {
+                console.log("Triggered condition 5:  If previous URL is not YouTube and current URL is an analytical URL, continue appending to urlBeforeYouTube in case URL after real URL is YouTube")
+                urlBeforeYouTube.push(changeInfo.url);
+            }
+
+            // If we're currently leaving YouTube website, try to capture all URL redirect until we hit real external site
+            else if (navigateToOrAwayFromYoutube === "Away" && urlAfterYouTube.length >= 2) {
+                console.log("Triggered condition 6: If we're currently leaving YouTube website, try to capture all URL redirect until we hit real external site")
+                urlAfterYouTube.push(changeInfo.url);
+            }
+
+            // Finally, if we're navigating away from YouTube, finalize record-keeping once we hit a real URL
+            if(navigateToOrAwayFromYoutube === "Away" && execludedURLType(changeInfo.url) === "Regular URL") {
+                console.log("Triggered condition 7: Finally, if we're navigating away from YouTube, finalize record-keeping once we hit a real URL");
+                const unixTimestamp = Date.now();
+                const date = new Date(unixTimestamp);
+                browsingHistory.push({
+                    timestamp: unixTimestamp,
+                    plain_text_time: date.toString(),
+                    prevYouTubeURL: urlAfterYouTube[0],
+                    succeedingExtSite: urlAfterYouTube[urlAfterYouTube.length - 1]});
+
+                urlAfterYouTube = [];
+                navigateToOrAwayFromYoutube = "nil";
+            }
         }
         // Add the current url as previous url
         tabIdToPreviousUrl[tabId] = changeInfo.url;
-        console.log(tabIdToPreviousUrl);
+        //console.log(tabIdToPreviousUrl);
     }
 });
 
 chrome.tabs.onCreated.addListener(function (tab) {
     console.log("Tab created on tabs");
     console.log(tab);
-    var previousUrl = tabIdToPreviousUrl[tab.id];
+    const previousUrl = tabIdToPreviousUrl[tab.id];
     // If the domain is different perform action.
     if (previousUrl !== tab.url) {
         // do something
     }
     // Add the current url as previous url
     tabIdToPreviousUrl[tab.id] = tab.url;
-    console.log(tabIdToPreviousUrl);
+    //console.log(tabIdToPreviousUrl);
 });
 
