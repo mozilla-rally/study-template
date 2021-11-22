@@ -43,6 +43,8 @@ function executeYTCollectFn() {
     // We only execute data collection function on the YouTube website
     if (URL.startsWith("https://www.youtube.com") || URL.startsWith("http://www.youtube.com")) {
         // Only execute content script functions if the current URL differs from previous URL
+
+        console.log("Encountering YouTube URL, continue executing");
         if (prevURL !== URL) {
             prevURL = URL;
             // We're at the YouTube video page
@@ -63,6 +65,9 @@ function executeYTCollectFn() {
                 console.log("Encountered Uncategorized YouTube Page Type at " + URL);
             }
         }
+    }
+    else {
+        console.log("This is not a YouTube URL, will not apply YouTube content parsing code");
     }
 }
 
@@ -164,7 +169,7 @@ function extractYouTubeSearchQuery(YouTubeURL) {
     // First, we need to replace all instances of "+" with " " (a whitespace), and then we can run decodeURIComponent()
     let decodedURI = decodeURIComponent(searchQuery.replaceAll("+", " "));
 
-    // Replace (use let string = '\"' to assign \" to a string variable, or use String.raw() method)
+    // Replace (use let a = '\\"' to assign \" to a string variable, or use String.raw() method)
     // \\ with \
     // \" with "
     // \' with '
