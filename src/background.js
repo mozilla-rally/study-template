@@ -160,12 +160,10 @@ chrome.runtime.onMessage.addListener(
             "from a content script:" + sender.tab.url :
             "from the extension");
         // Response is a JSON object
-        if (request.InternalUse) {
+        if (request.YTVideoInformation) {
             browsingHistory.push(request);
             console.log(browsingHistory);
             sendResponse({farewell: "goodbye"});
-        } else if (request.monitorPageLoadComplete) {
-            console.log("Background script began listening to YT Search Page");
         }
     }
 );
@@ -242,82 +240,8 @@ chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
         let previousUrl = tabIdToPreviousUrl[tabId];
 
         // If URL is indeed changed, continue processing
-        if (previousUrl !== changeInfo.url) {
-            // console.log(tabIdToPreviousUrl);
-            console.log(previousUrl + " → " + changeInfo.url);
-
-            // If previous URL is not YouTube and current URL is YouTube, record this previous URL as URL before users visiting YouTube
-            if (!/^http[s]?:\/\/www.youtube.com/ig.test(previousUrl) && /^http[s]?:\/\/www.youtube.com/ig.test(changeInfo.url)) {
-                console.log("Triggered condition 1: If previous URL is not YouTube and current URL is YouTube, record this previous URL as URL before users visiting YouTube")
-                urlBeforeYouTube.push(changeInfo.url);
-                navigateToOrAwayFromYoutube = "To";
-
-                const unixTimestamp = Date.now();
-                const date = new Date(unixTimestamp);
-                browsingHistory.push({
-                    timestamp: unixTimestamp,
-                    plain_text_time: date.toString(),
-                    prevURL: urlBeforeYouTube[0],
-                    succeedingYouTubeURL: changeInfo.url});
-
-                urlAfterYouTube = [];
-                navigateToOrAwayFromYoutube = "nil";
-            }
-
-            // If previous URL is YouTube and current URL is not YouTube, record the succeeding URL after leaving YouTube
-            else if (/^http[s]?:\/\/www.youtube.com/ig.test(previousUrl) && !/^http[s]?:\/\/www.youtube.com/ig.test(changeInfo.url)) {
-                console.log("Triggered condition 2: If previous URL is YouTube and current URL is not YouTube, record the succeeding URL after leaving YouTube.");
-                urlAfterYouTube.push(previousUrl, changeInfo.url);
-                navigateToOrAwayFromYoutube = "Away";
-            }
-
-            // If both previous URL and current URL is YouTube, clear temporary record
-            if (/^http[s]?:\/\/www.youtube.com/ig.test(previousUrl) &&
-                /^http[s]?:\/\/www.youtube.com/ig.test(changeInfo.url)) {
-                console.log("Triggered condition 3: If both previous URL and current URL is YouTube, clear temporary record");
-                urlBeforeYouTube = [];
-                urlAfterYouTube = [];
-                navigateToOrAwayFromYoutube = "nil";
-            }
-
-            // If neither previous URL nor current URL is YouTube or analytical URL, clear temporary record
-            else if (!/^http[s]?:\/\/www.youtube.com/ig.test(previousUrl) &&
-                    !/^http[s]?:\/\/www.youtube.com/ig.test(changeInfo.url) &&
-                    execludedURLType(previousUrl) === "Regular URL" &&
-                    changeInfo.url === "Regular URL") {
-                console.log("Triggered condition 4: If neither previous URL nor current URL is YouTube or analytical URL, clear temporary record");
-                urlBeforeYouTube = [];
-                urlAfterYouTube = [];
-                navigateToOrAwayFromYoutube = "nil";
-            }
-
-            // If previous URL is not YouTube and current URL is an analytical URL, continue appending to urlBeforeYouTube
-            // in case URL after real URL is YouTube
-            else if (!/^http[s]?:\/\/www.youtube.com/ig.test(previousUrl) && execludedURLType(changeInfo.url) !== "Regular URL") {
-                console.log("Triggered condition 5:  If previous URL is not YouTube and current URL is an analytical URL, continue appending to urlBeforeYouTube in case URL after real URL is YouTube")
-                urlBeforeYouTube.push(changeInfo.url);
-            }
-
-            // If we're currently leaving YouTube website, try to capture all URL redirect until we hit real external site
-            else if (navigateToOrAwayFromYoutube === "Away" && urlAfterYouTube.length >= 2) {
-                console.log("Triggered condition 6: If we're currently leaving YouTube website, try to capture all URL redirect until we hit real external site")
-                urlAfterYouTube.push(changeInfo.url);
-            }
-
-            // Finally, if we're navigating away from YouTube, finalize record-keeping once we hit a real URL
-            if(navigateToOrAwayFromYoutube === "Away" && execludedURLType(changeInfo.url) === "Regular URL") {
-                console.log("Triggered condition 7: Finally, if we're navigating away from YouTube, finalize record-keeping once we hit a real URL");
-                const unixTimestamp = Date.now();
-                const date = new Date(unixTimestamp);
-                browsingHistory.push({
-                    timestamp: unixTimestamp,
-                    plain_text_time: date.toString(),
-                    prevYouTubeURL: urlAfterYouTube[0],
-                    succeedingExtSite: urlAfterYouTube[urlAfterYouTube.length - 1]});
-
-                urlAfterYouTube = [];
-                navigateToOrAwayFromYoutube = "nil";
-            }
+        if (previousUrl !== undefined && previousUrl !== changeInfo.url) {
+            recordURLHistory(previousUrl, changeInfo.url);
         }
         // Add the current url as previous url
         tabIdToPreviousUrl[tabId] = changeInfo.url;
@@ -330,11 +254,96 @@ chrome.tabs.onCreated.addListener(function (tab) {
     console.log(tab);
     const previousUrl = tabIdToPreviousUrl[tab.id];
     // If the domain is different perform action.
-    if (previousUrl !== tab.url) {
-        // do something
+    if (previousUrl !== undefined && previousUrl !== tab.url) {
+        recordURLHistory(previousUrl, tab.url);
     }
     // Add the current url as previous url
     tabIdToPreviousUrl[tab.id] = tab.url;
     //console.log(tabIdToPreviousUrl);
 });
 
+function recordURLHistory(previousUrl, currURL) {
+    // console.log(tabIdToPreviousUrl);
+    console.log(previousUrl + " → " + currURL);
+
+    // If previous URL is not YouTube and current URL is YouTube, record this previous URL as URL before users visiting YouTube
+    if (!/^http[s]?:\/\/www.youtube.com/ig.test(previousUrl) && /^http[s]?:\/\/www.youtube.com/ig.test(currURL)) {
+        console.log("Triggered condition 1: If previous URL is not YouTube and current URL is YouTube, record this previous URL as URL before users visiting YouTube")
+        urlBeforeYouTube.push(previousUrl);
+        navigateToOrAwayFromYoutube = "To";
+
+        const unixTimestamp = Date.now();
+        const date = new Date(unixTimestamp);
+        browsingHistory.push({
+            timestamp: unixTimestamp,
+            plain_text_time: date.toString(),
+            prevURL: urlBeforeYouTube[0],
+            succeedingYouTubeURL: currURL});
+
+        urlBeforeYouTube = [];
+        navigateToOrAwayFromYoutube = "nil";
+    }
+
+    // If previous URL is YouTube and current URL is not YouTube, record the succeeding URL after leaving YouTube
+    else if (/^http[s]?:\/\/www.youtube.com/ig.test(previousUrl) && !/^http[s]?:\/\/www.youtube.com/ig.test(currURL)) {
+        console.log("Triggered condition 2: If previous URL is YouTube and current URL is not YouTube, record the succeeding URL after leaving YouTube.");
+        urlAfterYouTube.push(previousUrl, currURL);
+        navigateToOrAwayFromYoutube = "Away";
+    }
+
+    // If both previous URL and current URL is YouTube, clear temporary record
+    if (/^http[s]?:\/\/www.youtube.com/ig.test(previousUrl) &&
+        /^http[s]?:\/\/www.youtube.com/ig.test(currURL)) {
+        console.log("Triggered condition 3: If both previous URL and current URL is YouTube, clear temporary record");
+        urlBeforeYouTube = [];
+        urlAfterYouTube = [];
+        navigateToOrAwayFromYoutube = "nil";
+    }
+
+    // If neither previous URL nor current URL is YouTube or analytical URL, clear temporary record
+    else if (!/^http[s]?:\/\/www.youtube.com/ig.test(previousUrl) &&
+        !/^http[s]?:\/\/www.youtube.com/ig.test(currURL) &&
+        execludedURLType(previousUrl) === "Regular URL" &&
+        execludedURLType(currURL) === "Regular URL") {
+        console.log("Triggered condition 4: If neither previous URL nor current URL is YouTube or analytical URL, clear temporary record");
+        urlBeforeYouTube = [];
+        urlAfterYouTube = [];
+        navigateToOrAwayFromYoutube = "nil";
+    }
+
+        // If previous URL is not YouTube and current URL is an analytical URL, continue appending to urlBeforeYouTube
+    // in case URL after real URL is YouTube
+    else if (!/^http[s]?:\/\/www.youtube.com/ig.test(previousUrl) && execludedURLType(currURL) !== "Regular URL") {
+        console.log("Triggered condition 5:  If previous URL is not YouTube and current URL is an analytical URL, continue appending to urlBeforeYouTube in case URL after real URL is YouTube")
+        urlBeforeYouTube.push(currURL);
+    }
+
+    // If we're currently leaving YouTube website, try to capture all URL redirect until we hit real external site
+    else if (navigateToOrAwayFromYoutube === "Away" && urlAfterYouTube.length >= 2) {
+        console.log("Triggered condition 6: If we're currently leaving YouTube website, try to capture all URL redirect until we hit real external site")
+        urlAfterYouTube.push(currURL);
+    }
+
+    // Finally, if we're navigating away from YouTube, finalize record-keeping once we hit a real URL
+    if(navigateToOrAwayFromYoutube === "Away" && execludedURLType(currURL) === "Regular URL") {
+        console.log("Triggered condition 7: Finally, if we're navigating away from YouTube, finalize record-keeping once we hit a real URL");
+        const unixTimestamp = Date.now();
+        const date = new Date(unixTimestamp);
+        browsingHistory.push({
+            timestamp: unixTimestamp,
+            plain_text_time: date.toString(),
+            prevYouTubeURL: urlAfterYouTube[0],
+            succeedingExtSite: urlAfterYouTube[urlAfterYouTube.length - 1]});
+
+        urlAfterYouTube = [];
+        navigateToOrAwayFromYoutube = "nil";
+    }
+
+    console.log("URL Before Youtube")
+    console.log(urlBeforeYouTube);
+
+    console.log("URL After Youtube")
+    console.log(urlAfterYouTube);
+
+    console.log(browsingHistory);
+}
