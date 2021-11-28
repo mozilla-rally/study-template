@@ -167,11 +167,15 @@ chrome.runtime.onMessage.addListener(
 
 // Use case: for a lot of times, when we click on a YouTube link (or external site on YouTube), you're actually visiting
 // a tracker URL which will automatically redirect you to actual site. We need to record actual site not tracker URL.
-function execludedURLType(urlInput) {
-    // Exclude non http:// and https:// page, such as about:blank, mail://, tel://, or moz-extension://
-    if (!/^http[s]?:\/\//ig.test(urlInput)) {
-        return "Non-http(s) page, ignoring";
-    }
+function checkRedirectionURL(urlInput) {
+
+    // It might be unnecessary to treat this as redirecting URLs that would scramble our referral URL analysis
+
+    // // Exclude non http:// and https:// page, such as about:blank, mail://, tel://, or moz-extension://
+    // if (!/^http[s]?:\/\//ig.test(urlInput)) {
+    //     return "Non-http(s) page, ignoring";
+    // }
+    //
 
     // Filter Google regular link URL, such as https://www.google.com/url?sa=t&rct=j&q=&esrc=s&source=web&cd=&ved=2ahUKEwiN3r_M2Kr0AhVbLTQIHUUsCSoQFnoECAcQAQ&url=https%3A%2F%2Fzh.wikipedia.org%2Fzh%2F%25E4%25BC%258A%25E7%2588%25BE%25E5%25BA%25AB%25E7%2589%25B9MC-21&usg=AOvVaw3LDo5mq7NHxNH0KCPKCfcN
     if (urlInput.startsWith("https://www.google.com/url?")) {
@@ -211,7 +215,7 @@ function execludedURLType(urlInput) {
 
 // Function that sends message to content script to the tab that has YouTube URL change
 function updatePageAction(tabId, newURL) {
-    const excludedURLType = execludedURLType(newURL);
+    const excludedURLType = checkRedirectionURL(newURL);
 
     if (excludedURLType === "Regular URL") {
         chrome.tabs.sendMessage(tabId, {is_content_script: true}, function (response) {
@@ -262,15 +266,55 @@ chrome.tabs.onActivated.addListener((activeInfo) => {
 //     recordURLHistory(tab.url);
 // });
 
+let numOfWindow = 1; // This is used to facilitate when user closes all browser window while currently on YouTube.
+
+chrome.windows.onCreated.addListener((windowid) =>{
+    numOfWindow = numOfWindow + 1;
+    console.log("Browser created a window, now it has " + numOfWindow + " windows");
+});
+
+chrome.windows.onRemoved.addListener((windowid) =>{
+    if(numOfWindow === 1 && /^http[s]?:\/\/www.youtube.com/ig.test(lastURLs[0])) {
+        console.log("Triggered special condition: user closes all browser window while on YouTube page, record this event.");
+        const unixTimestamp = Date.now();
+        const date = new Date(unixTimestamp);
+        browsingHistory.push({
+            timestamp: unixTimestamp,
+            plain_text_time: date.toString(),
+            prevURL: lastURLs[0],
+            succeedingYouTubeURL: "User closes all browser window from YouTube"});
+    }
+    numOfWindow = numOfWindow - 1;
+    console.log("Browser closes a window, now it has " + numOfWindow + " windows");
+});
+
 function recordURLHistory(currURL) {
+    // Exclude browser utility pages, such as about:blank, about:newtab and moz-extension:// ,
+    // as users will immediately visit real website address shortly afterwards
+    if (currURL.startsWith("about:") || currURL.startsWith("moz-extension://")) {
+        return;
+    }
+
     // console.log(tabIdToPreviousUrl);
     lastURLs.push(currURL);
     console.log(lastURLs);
 
     // If we start at redirect URL, do not record itself and clear the record.
-    if (execludedURLType(lastURLs[0]) !== "Regular URL") {
+    if (checkRedirectionURL(lastURLs[0]) !== "Regular URL") {
         console.log("Triggered condition 0: If we start at redirect URL, do not record itself and clear the record");
         lastURLs = [];
+    }
+
+    // If we start at YouTube URL, record this as initial visit
+    else if (/^http[s]?:\/\/www.youtube.com/ig.test(lastURLs[0]) && lastURLs.length === 1) {
+        console.log("Triggered condition 0.5: If we start at YouTube URL, record this as initial visit and clear temporary record");
+        const unixTimestamp = Date.now();
+        const date = new Date(unixTimestamp);
+        browsingHistory.push({
+            timestamp: unixTimestamp,
+            plain_text_time: date.toString(),
+            prevURL: "Initial Visit to YouTube",
+            succeedingYouTubeURL: currURL});
     }
 
     // If previous URL is YouTube and current URL is YouTube, do nothing and clear temporary record
@@ -281,7 +325,7 @@ function recordURLHistory(currURL) {
 
     // If neither previous URL nor current URL is YouTube or redirecting URL, clear temporary record
     else if (!/^http[s]?:\/\/www.youtube.com/ig.test(lastURLs[0]) && !/^http[s]?:\/\/www.youtube.com/ig.test(currURL) &&
-            execludedURLType(lastURLs[0]) === "Regular URL" && execludedURLType(currURL) === "Regular URL") {
+            checkRedirectionURL(lastURLs[0]) === "Regular URL" && checkRedirectionURL(currURL) === "Regular URL") {
         console.log("Triggered condition 2: If neither previous URL nor current URL is YouTube or redirecting URL, clear temporary record");
         lastURLs = [currURL];
     }
@@ -304,15 +348,15 @@ function recordURLHistory(currURL) {
     // We've eliminated the within YouTube navigation case
     else if (/^http[s]?:\/\/www.youtube.com/ig.test(lastURLs[0])){
         // We left YouTube, record this YouTube departure and clear temporary record
-        if(execludedURLType(currURL) === "Regular URL") {
+        if(checkRedirectionURL(currURL) === "Regular URL") {
             console.log("Triggered condition 4: We left YouTube, record this YouTube departure and clear temporary record");
             const unixTimestamp = Date.now();
             const date = new Date(unixTimestamp);
             browsingHistory.push({
                 timestamp: unixTimestamp,
                 plain_text_time: date.toString(),
-                prevURL: lastURLs[0],
-                succeedingYouTubeURL: currURL});
+                prevYouTubeURL: lastURLs[0],
+                succeedingExternalURL: currURL});
             lastURLs = [currURL];
         }
     }

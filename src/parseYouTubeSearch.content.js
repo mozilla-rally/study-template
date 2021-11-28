@@ -11,6 +11,7 @@ let isObservingDOM = false;
 let bodyContent;
 let pageVisitStartTime = -1;
 let pageVisitStopTime = -1;
+let beforeUnloadListenerHasAttached = false;
 
 console.log("Running YouTube content script");
 
@@ -32,8 +33,7 @@ const callback = function (mutationsList, observer) {
     const now = +new Date();
     if (now - lastBodyExtractionTimestamp >= 1000) { // 1 second
         lastBodyExtractionTimestamp = now;
-        bodyContent = targetNode;
-        console.log("Refreshed bodyContent, it has the type of " + typeof(bodyContent));
+        bodyContent = targetNode.outerHTML; // we will not just read but not write to the actual YouTube html content
     }
 };
 
@@ -94,9 +94,12 @@ function executeYTCollectFn() {
 
             // When the user about to navigate away YouTube while still in YouTube website, the web page will load a
             // new page with a new URL instead of URL change without page reloading
-            window.addEventListener('beforeunload', function () {
-                stopObserveDOMChange();
-            });
+            if(!beforeUnloadListenerHasAttached) {
+                window.addEventListener('beforeunload', ()=> {
+                    stopObserveDOMChange();
+                });
+                beforeUnloadListenerHasAttached = true;
+            }
         }
     } else {
         console.log("This is not a YouTube URL, will not apply YouTube content parsing code");
@@ -110,13 +113,12 @@ function executeYTCollectFn() {
 function startObserveDOMChange() {
     // Start observing the target node for configured mutations
     observer.observe(targetNode, config);
-    // Later, you can stop observing
-    observer.disconnect();
 }
 
 function stopObserveDOMChange() {
     pageVisitStopTime = Date.now();
     isObservingDOM = false;
+    // Later, you can stop observing
     observer.disconnect();
     sendMessage();
 }
