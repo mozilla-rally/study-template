@@ -227,19 +227,19 @@ function updatePageAction(tabId, newURL) {
 }
 
 // "Guaranteed???" working method: extension will signal content script once its url changes
-chrome.tabs.onUpdated.addListener( (tabId, changeInfo, tab) => {
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
     // Only record URL and send content script refresh when page URL is changed
     if (changeInfo.url) {
         console.log("URL change detected on tabs");
         updatePageAction(tabId, changeInfo.url);
 
         // we only can trigger URL update if the tab is activated and in current window
-        chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+        chrome.tabs.query({active: true, currentWindow: true}, function (tabs) {
             // since only one tab should be active and in the current window at once
             // the return variable should only have one entry
             const activeTab = tabs[0];
             // var activeTabId = activeTab.id; // or do whatever you need
-            if(activeTab.url !== undefined) {
+            if (activeTab.url !== undefined) {
                 recordURLHistory(activeTab.url);
             }
         });
@@ -247,12 +247,12 @@ chrome.tabs.onUpdated.addListener( (tabId, changeInfo, tab) => {
 });
 
 chrome.tabs.onActivated.addListener((activeInfo) => {
-    chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+    chrome.tabs.query({active: true, currentWindow: true}, function (tabs) {
         // since only one tab should be active and in the current window at once
         // the return variable should only have one entry
         const activeTab = tabs[0];
         // var activeTabId = activeTab.id; // or do whatever you need
-        if(activeTab.url !== undefined) {
+        if (activeTab.url !== undefined) {
             recordURLHistory(activeTab.url);
         }
     });
@@ -266,32 +266,28 @@ chrome.tabs.onActivated.addListener((activeInfo) => {
 //     recordURLHistory(tab.url);
 // });
 
-let numOfWindow = 1; // This is used to facilitate when user closes all browser window while currently on YouTube.
-
-chrome.windows.onCreated.addListener((windowid) =>{
-    numOfWindow = numOfWindow + 1;
-    console.log("Browser created a window, now it has " + numOfWindow + " windows");
-});
-
-chrome.windows.onRemoved.addListener((windowid) =>{
-    if(numOfWindow === 1 && /^http[s]?:\/\/www.youtube.com/ig.test(lastURLs[0])) {
-        console.log("Triggered special condition: user closes all browser window while on YouTube page, record this event.");
-        const unixTimestamp = Date.now();
-        const date = new Date(unixTimestamp);
-        browsingHistory.push({
-            timestamp: unixTimestamp,
-            plain_text_time: date.toString(),
-            prevURL: lastURLs[0],
-            succeedingYouTubeURL: "User closes all browser window from YouTube"});
-    }
-    numOfWindow = numOfWindow - 1;
-    console.log("Browser closes a window, now it has " + numOfWindow + " windows");
+chrome.windows.onRemoved.addListener((windowid) => {
+    chrome.windows.getAll({"populate": true}, (window_list) => {
+            if (window_list.size === 0 && /^http[s]?:\/\/www.youtube.com/ig.test(lastURLs[0])) {
+                console.log("Triggered special condition: user closes all browser window while on YouTube page, record this event.");
+                const unixTimestamp = Date.now();
+                const date = new Date(unixTimestamp);
+                browsingHistory.push({
+                    timestamp: unixTimestamp,
+                    plain_text_time: date.toString(),
+                    prevURL: lastURLs[0],
+                    succeedingYouTubeURL: "User closes all browser window from YouTube"
+                });
+                lastURLs = [];
+            }
+        });
+    console.log("Browser closes a window");
 });
 
 function recordURLHistory(currURL) {
-    // Exclude browser utility pages, such as about:blank, about:newtab and moz-extension:// ,
+    // Exclude browser utility pages, such as about:blank, about:newtab, moz-extension:// , and view-source:
     // as users will immediately visit real website address shortly afterwards
-    if (currURL.startsWith("about:") || currURL.startsWith("moz-extension://")) {
+    if (currURL.startsWith("about:") || currURL.startsWith("moz-extension://") || currURL.startsWith("view-source:")) {
         return;
     }
 
@@ -314,7 +310,8 @@ function recordURLHistory(currURL) {
             timestamp: unixTimestamp,
             plain_text_time: date.toString(),
             prevURL: "Initial Visit to YouTube",
-            succeedingYouTubeURL: currURL});
+            succeedingYouTubeURL: currURL
+        });
     }
 
     // If previous URL is YouTube and current URL is YouTube, do nothing and clear temporary record
@@ -325,7 +322,7 @@ function recordURLHistory(currURL) {
 
     // If neither previous URL nor current URL is YouTube or redirecting URL, clear temporary record
     else if (!/^http[s]?:\/\/www.youtube.com/ig.test(lastURLs[0]) && !/^http[s]?:\/\/www.youtube.com/ig.test(currURL) &&
-            checkRedirectionURL(lastURLs[0]) === "Regular URL" && checkRedirectionURL(currURL) === "Regular URL") {
+        checkRedirectionURL(lastURLs[0]) === "Regular URL" && checkRedirectionURL(currURL) === "Regular URL") {
         console.log("Triggered condition 2: If neither previous URL nor current URL is YouTube or redirecting URL, clear temporary record");
         lastURLs = [currURL];
     }
@@ -333,7 +330,7 @@ function recordURLHistory(currURL) {
     // We've eliminated the regular URL case to regular URL case
     else if (!/^http[s]?:\/\/www.youtube.com/ig.test(lastURLs[0])) {
         // We've arrived to YouTube from a non-YouTube URL, record this YouTube arrival and clear temporary record
-        if(/^http[s]?:\/\/www.youtube.com/ig.test(currURL)) {
+        if (/^http[s]?:\/\/www.youtube.com/ig.test(currURL)) {
             console.log("Triggered condition 3: We've arrived to YouTube from a non-YouTube URL, record this YouTube arrival and clear temporary record.");
             const unixTimestamp = Date.now();
             const date = new Date(unixTimestamp);
@@ -341,14 +338,15 @@ function recordURLHistory(currURL) {
                 timestamp: unixTimestamp,
                 plain_text_time: date.toString(),
                 prevURL: lastURLs[0],
-                succeedingYouTubeURL: currURL});
+                succeedingYouTubeURL: currURL
+            });
             lastURLs = [currURL];
         }
     }
     // We've eliminated the within YouTube navigation case
-    else if (/^http[s]?:\/\/www.youtube.com/ig.test(lastURLs[0])){
+    else if (/^http[s]?:\/\/www.youtube.com/ig.test(lastURLs[0])) {
         // We left YouTube, record this YouTube departure and clear temporary record
-        if(checkRedirectionURL(currURL) === "Regular URL") {
+        if (checkRedirectionURL(currURL) === "Regular URL") {
             console.log("Triggered condition 4: We left YouTube, record this YouTube departure and clear temporary record");
             const unixTimestamp = Date.now();
             const date = new Date(unixTimestamp);
@@ -356,12 +354,11 @@ function recordURLHistory(currURL) {
                 timestamp: unixTimestamp,
                 plain_text_time: date.toString(),
                 prevYouTubeURL: lastURLs[0],
-                succeedingExternalURL: currURL});
+                succeedingExternalURL: currURL
+            });
             lastURLs = [currURL];
         }
-    }
-
-    else {
+    } else {
         console.log("Redirection or undefined URL, diagnostic information below:");
         console.log("Current URL: " + currURL);
     }
