@@ -52,6 +52,7 @@ if (window === top) {
 
 function executeYTCollectFn() {
     const URL = document.URL;
+    console.log("Trigger executeYTCollectFn() at " + URL);
     // We only execute data collection function on the YouTube website
     if (/^http[s]?:\/\/www.youtube.com/ig.test(URL)) {
         // Only execute content script functions if the current URL differs from previous URL
@@ -89,6 +90,13 @@ function executeYTCollectFn() {
                 pageVisitStartTime = Date.now();
             }
             startObserveDOMChange();
+
+
+            // When the user about to navigate away YouTube while still in YouTube website, the web page will load a
+            // new page with a new URL instead of URL change without page reloading
+            window.addEventListener('beforeunload', function () {
+                stopObserveDOMChange();
+            });
         }
     } else {
         console.log("This is not a YouTube URL, will not apply YouTube content parsing code");
@@ -136,10 +144,4 @@ function sendMessage() {
 // When the YouTube Page is initially opened/loaded (at the first time)
 window.addEventListener('load', function () {
     executeYTCollectFn();
-});
-
-// When the user about to navigate away YouTube while still in YouTube website, the web page will load a
-// new page with a new URL instead of URL change without page reloading
-window.addEventListener('beforeunload', function () {
-    stopObserveDOMChange();
 });

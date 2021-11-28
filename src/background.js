@@ -152,9 +152,7 @@ let lastURLs = [];
 
 chrome.runtime.onMessage.addListener(
     function (request, sender, sendResponse) {
-        console.log(sender.tab ?
-            "from a content script:" + sender.tab.url :
-            "from the extension");
+        // console.log(sender.tab ? "from a content script:" + sender.tab.url : "from the extension");
         // Response is a JSON object
         if (request.YTVideoInformation) {
             browsingHistory.push(request);
@@ -269,17 +267,23 @@ function recordURLHistory(currURL) {
     lastURLs.push(currURL);
     console.log(lastURLs);
 
-    // If previous URL is YouTube and current URL is YouTube, do nothing and clear temporary record
-    if (/^http[s]?:\/\/www.youtube.com/ig.test(lastURLs[0]) && /^http[s]?:\/\/www.youtube.com/ig.test(currURL)) {
-        console.log("Triggered condition 1: If previous URL is YouTube and current URL is YouTube, do nothing and clear temporary record");
+    // If we start at redirect URL, do not record itself and clear the record.
+    if (execludedURLType(lastURLs[0]) !== "Regular URL") {
+        console.log("Triggered condition 0: If we start at redirect URL, do not record itself and clear the record");
         lastURLs = [];
+    }
+
+    // If previous URL is YouTube and current URL is YouTube, do nothing and clear temporary record
+    else if (/^http[s]?:\/\/www.youtube.com/ig.test(lastURLs[0]) && /^http[s]?:\/\/www.youtube.com/ig.test(currURL)) {
+        console.log("Triggered condition 1: If previous URL is YouTube and current URL is YouTube, do nothing and clear temporary record");
+        lastURLs = [currURL];
     }
 
     // If neither previous URL nor current URL is YouTube or redirecting URL, clear temporary record
     else if (!/^http[s]?:\/\/www.youtube.com/ig.test(lastURLs[0]) && !/^http[s]?:\/\/www.youtube.com/ig.test(currURL) &&
-            execludedURLType(lastURLs[0]) !== "Regular URL" && execludedURLType(currURL) !== "Regular URL") {
+            execludedURLType(lastURLs[0]) === "Regular URL" && execludedURLType(currURL) === "Regular URL") {
         console.log("Triggered condition 2: If neither previous URL nor current URL is YouTube or redirecting URL, clear temporary record");
-        lastURLs = [];
+        lastURLs = [currURL];
     }
 
     // We've eliminated the regular URL case to regular URL case
@@ -294,7 +298,7 @@ function recordURLHistory(currURL) {
                 plain_text_time: date.toString(),
                 prevURL: lastURLs[0],
                 succeedingYouTubeURL: currURL});
-            lastURLs = [];
+            lastURLs = [currURL];
         }
     }
     // We've eliminated the within YouTube navigation case
@@ -309,7 +313,7 @@ function recordURLHistory(currURL) {
                 plain_text_time: date.toString(),
                 prevURL: lastURLs[0],
                 succeedingYouTubeURL: currURL});
-            lastURLs = [];
+            lastURLs = [currURL];
         }
     }
 
