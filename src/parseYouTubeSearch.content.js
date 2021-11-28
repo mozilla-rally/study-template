@@ -14,32 +14,26 @@ let pageVisitStopTime = -1;
 
 console.log("Running YouTube content script");
 
+pageVisitStartTime = Date.now();
+
 // Code to trigger data collection function
-
-// When the YouTube Page is initially opened/loaded (at the first time)
-window.addEventListener('load', function () {
-    // console.log('load');
-    //async wait (function triggered after couple of seconds)
-    executeYTCollectFn();
-});
-
 
 // Define DOM mutation observer
 // Select the node that will be observed for mutations
-const targetNode = document.getElementById('some-id');
+const targetNode = document.getElementById('content');
 
 // Options for the observer (which mutations to observe)
 const config = {attributes: true, childList: true, subtree: true};
 
+let lastBodyExtractionTimestamp =+ new Date();
 // Callback function to execute when mutations are observed
 const callback = function (mutationsList, observer) {
-    // Use traditional 'for loops' for IE 11
-    for (const mutation of mutationsList) {
-        if (mutation.type === 'childList') {
-            console.log('A child node has been added or removed.');
-        } else if (mutation.type === 'attributes') {
-            console.log('The ' + mutation.attributeName + ' attribute was modified.');
-        }
+    // Replace bodyContent with the actual body content, with rate limit of one page content extraction per second
+    const now = +new Date();
+    if (now - lastBodyExtractionTimestamp >= 1000) { // 1 second
+        lastBodyExtractionTimestamp = now;
+        bodyContent = targetNode;
+        console.log("Refreshed bodyContent, it has the type of " + typeof(bodyContent));
     }
 };
 
@@ -67,7 +61,7 @@ function executeYTCollectFn() {
             prevURL = URL;
 
             if(isObservingDOM) {
-
+                stopObserveDOMChange();
             }
 
             youTubeCategory = "Other";
@@ -90,7 +84,10 @@ function executeYTCollectFn() {
                 console.log("Encountered Uncategorized YouTube Page Type at " + URL);
             }
 
-            // This is an de-facto async function; code after this function call will continue to execute
+            if(pageVisitStartTime !== -1) {
+                // Page visit start time will only refresh if content script is re-executed due to URL change
+                pageVisitStartTime = Date.now();
+            }
             startObserveDOMChange();
         }
     } else {
@@ -103,20 +100,17 @@ function executeYTCollectFn() {
  */
 
 function startObserveDOMChange() {
-    pageVisitStartTime = Date.now();
-
     // Start observing the target node for configured mutations
     observer.observe(targetNode, config);
-
     // Later, you can stop observing
     observer.disconnect();
 }
 
 function stopObserveDOMChange() {
     pageVisitStopTime = Date.now();
-    sendMessage();
     isObservingDOM = false;
     observer.disconnect();
+    sendMessage();
 }
 
 function sendMessage() {
@@ -138,3 +132,14 @@ function sendMessage() {
         console.log(response.farewell);
     });
 }
+
+// When the YouTube Page is initially opened/loaded (at the first time)
+window.addEventListener('load', function () {
+    executeYTCollectFn();
+});
+
+// When the user about to navigate away YouTube while still in YouTube website, the web page will load a
+// new page with a new URL instead of URL change without page reloading
+window.addEventListener('beforeunload', function () {
+    stopObserveDOMChange();
+});
