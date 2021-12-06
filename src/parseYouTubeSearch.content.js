@@ -11,7 +11,6 @@ let isObservingDOM = false;
 let bodyContent;
 let pageVisitStartTime = -1;
 let pageVisitStopTime = -1;
-let beforeUnloadListenerHasAttached = false;
 
 console.log("Running YouTube content script");
 
@@ -31,7 +30,7 @@ let lastBodyExtractionTimestamp =+ new Date();
 const callback = function (mutationsList, observer) {
     // Replace bodyContent with the actual body content, with rate limit of one page content extraction per second
     const now = +new Date();
-    if (now - lastBodyExtractionTimestamp >= 500) { // 0.5 second (increased to 0.5 because it makes sense for young users who enjoy refreshing page quickly)
+    if (now - lastBodyExtractionTimestamp >= 750) { // 0.75 second (increased to 0.5 because it makes sense for young users who enjoy refreshing page quickly)
         lastBodyExtractionTimestamp = now;
         bodyContent = targetNode.outerHTML; // we will not just read but not write to the actual YouTube html content
     }
@@ -94,12 +93,9 @@ function executeYTCollectFn() {
 
             // When the user about to navigate away YouTube while still in YouTube website, the web page will load a
             // new page with a new URL instead of URL change without page reloading
-            if(!beforeUnloadListenerHasAttached) {
-                window.addEventListener('beforeunload', ()=> {
-                    stopObserveDOMChange();
-                });
-                beforeUnloadListenerHasAttached = true;
-            }
+            window.addEventListener('beforeunload', function () {
+                stopObserveDOMChange();
+            });
         }
     } else {
         console.log("This is not a YouTube URL, will not apply YouTube content parsing code");
