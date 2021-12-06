@@ -31,7 +31,7 @@ let lastBodyExtractionTimestamp =+ new Date();
 const callback = function (mutationsList, observer) {
     // Replace bodyContent with the actual body content, with rate limit of one page content extraction per second
     const now = +new Date();
-    if (now - lastBodyExtractionTimestamp >= 1000) { // 1 second
+    if (now - lastBodyExtractionTimestamp >= 500) { // 0.5 second (increased to 0.5 because it makes sense for young users who enjoy refreshing page quickly)
         lastBodyExtractionTimestamp = now;
         bodyContent = targetNode.outerHTML; // we will not just read but not write to the actual YouTube html content
     }
@@ -116,15 +116,13 @@ function startObserveDOMChange() {
 }
 
 function stopObserveDOMChange() {
+    observer.disconnect();
     pageVisitStopTime = Date.now();
     isObservingDOM = false;
-    // Later, you can stop observing
-    observer.disconnect();
     sendMessage();
 }
 
 function sendMessage() {
-
     const pageVisitStartPlainTextDate = new Date(pageVisitStartTime);
     const pageVisitstopPlainTextDate = new Date(pageVisitStopTime);
     chrome.runtime.sendMessage({
@@ -143,7 +141,18 @@ function sendMessage() {
     });
 }
 
+executeYTCollectFn();
+
 // When the YouTube Page is initially opened/loaded (at the first time)
-window.addEventListener('load', function () {
-    executeYTCollectFn();
-});
+
+// These are unstable, as they won't always get fired whenever page is loaded
+
+// window.addEventListener('load', function () {
+//     console.log("Window Load Event Listener is triggered in the content script.");
+//     executeYTCollectFn();
+// });
+//
+// document.addEventListener('DOMContentLoaded', function () {
+//     console.log("Window Load Event Listener is triggered in the content script.");
+//     executeYTCollectFn();
+// });

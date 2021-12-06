@@ -4,7 +4,7 @@
 
 // This is the main background script for the study template.
 // The build system will bundle dependencies into this script
-// and output the bundled scripr to dist/background.js.
+// and output the bundled script to dist/background.js.
 
 // Import the WebExtensions polyfill, for cross-browser compatibility.
 // Note that Rally and WebScience currently only support Firefox.
@@ -17,10 +17,7 @@ import {Rally, runStates} from "@mozilla/rally";
 import * as webScience from "@mozilla/web-science";
 
 // Example: import a module.
-import {
-    initialize as exampleModuleInitialize,
-    uninitialize as exampleModuleUninitialize
-} from './exampleModule';
+import {initialize as exampleModuleInitialize, uninitialize as exampleModuleUninitialize} from './exampleModule';
 
 // Developer mode runs locally and does not use the Firebase server.
 // Data is collected locally, and an options page is provided to export it.
@@ -233,7 +230,8 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
         console.log("URL change detected on tabs");
         updatePageAction(tabId, changeInfo.url);
 
-        // we only can trigger URL update if the tab is activated and in current window
+        // To accurate record users' site-visiting before and after YouTube, we only can trigger URL recording
+        // if the tab is activated and in current window
         chrome.tabs.query({active: true, currentWindow: true}, function (tabs) {
             // since only one tab should be active and in the current window at once
             // the return variable should only have one entry
@@ -246,6 +244,7 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
     }
 });
 
+// Listen to user switching to another tab (the target tab becomes the active tab)
 chrome.tabs.onActivated.addListener((activeInfo) => {
     chrome.tabs.query({active: true, currentWindow: true}, function (tabs) {
         // since only one tab should be active and in the current window at once
@@ -258,31 +257,47 @@ chrome.tabs.onActivated.addListener((activeInfo) => {
     });
 });
 
-// Assumes that when user initiates a new tab creation, this tab will be an active tab
+// Not-working special case: when user is currently on YouTube and completely closes browser without switching to another tab, the extension could not capture this user leaving YouTube event, but it can receive the content of last YouTube visit.
+
+// browser.windows.onRemoved.addListener((windowId) => {
+//     browser.windows.getAll({"populate": true}, (window_list) => {
+//             if (window_list.size === 0 && /^http[s]?:\/\/www.youtube.com/ig.test(lastURLs[0])) {
+//                 console.log("Triggered special condition: user closes all browser window while on YouTube page, record this event.");
+//                 const unixTimestamp = Date.now();
+//                 const date = new Date(unixTimestamp);
+//                 browsingHistory.push({
+//                     timestamp: unixTimestamp,
+//                     plain_text_time: date.toString(),
+//                     prevURL: lastURLs[0],
+//                     succeedingYouTubeURL: "User closes all browser window from YouTube"
+//                 });
+//                 lastURLs = [];
+//             }
+//         });
+//     console.log("Browser closes a window");
+// });
 //
-// chrome.tabs.onCreated.addListener((tab) => {
-//     // console.log("Tab created on tabs");
-//     // When tab
-//     recordURLHistory(tab.url);
+// // This is still not working, will try Window.onremoved listener
+// browser.windows.onRemoved.addListener((windowId) => {
+//     console.log("Closed window: " + windowId);
 // });
 
-chrome.windows.onRemoved.addListener((windowid) => {
-    chrome.windows.getAll({"populate": true}, (window_list) => {
-            if (window_list.size === 0 && /^http[s]?:\/\/www.youtube.com/ig.test(lastURLs[0])) {
-                console.log("Triggered special condition: user closes all browser window while on YouTube page, record this event.");
-                const unixTimestamp = Date.now();
-                const date = new Date(unixTimestamp);
-                browsingHistory.push({
-                    timestamp: unixTimestamp,
-                    plain_text_time: date.toString(),
-                    prevURL: lastURLs[0],
-                    succeedingYouTubeURL: "User closes all browser window from YouTube"
-                });
-                lastURLs = [];
-            }
-        });
-    console.log("Browser closes a window");
-});
+// browser.tabs.onRemoved.addListener(function (tabId, removeInfo) {
+//     browser.windows.getAll({"populate": true}, (window_list) => {
+//         if ((window_list === undefined || window_list.size === 0) && /^http[s]?:\/\/www.youtube.com/ig.test(lastURLs[0])) {
+//             console.log("Triggered special condition: user closes all browser window while on YouTube page, record this event.");
+//             const unixTimestamp = Date.now();
+//             const date = new Date(unixTimestamp);
+//             browsingHistory.push({
+//                 timestamp: unixTimestamp,
+//                 plain_text_time: date.toString(),
+//                 prevURL: lastURLs[0],
+//                 succeedingYouTubeURL: "User closes all browser window from YouTube"
+//             });
+//             lastURLs = [];
+//         }
+//     });
+// });
 
 function recordURLHistory(currURL) {
     // Exclude browser utility pages, such as about:blank, about:newtab, moz-extension:// , and view-source:
@@ -303,7 +318,7 @@ function recordURLHistory(currURL) {
 
     // If we start at YouTube URL, record this as initial visit
     else if (/^http[s]?:\/\/www.youtube.com/ig.test(lastURLs[0]) && lastURLs.length === 1) {
-        console.log("Triggered condition 0.5: If we start at YouTube URL, record this as initial visit and clear temporary record");
+        console.log("Triggered condition 0.5: If we start at YouTube URL (from nothing), record this as initial visit and clear temporary record");
         const unixTimestamp = Date.now();
         const date = new Date(unixTimestamp);
         browsingHistory.push({
