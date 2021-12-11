@@ -6,14 +6,14 @@ import "webextension-polyfill";
 
 let prevURL = undefined; // Check whether the YouTUbe URL actually same, and do not execute content script function again if it's same
 // this is used to record loading timeout (2 seconds) before parsing web page
+let loadingTimeOut = undefined;
 let youTubeCategory = "";
-let isObservingDOM = false;
-let bodyContent;
 let pageVisitStartTime = -1;
 let pageVisitStopTime = -1;
 
 console.log("Running YouTube content script");
 
+// If it's initial visit, record the page visit start time
 pageVisitStartTime = Date.now();
 
 // Code to trigger data collection function
@@ -21,23 +21,6 @@ pageVisitStartTime = Date.now();
 // Define DOM mutation observer
 // Select the node that will be observed for mutations
 const targetNode = document.getElementById('content');
-
-// Options for the observer (which mutations to observe)
-const config = {attributes: true, childList: true, subtree: true};
-
-let lastBodyExtractionTimestamp =+ new Date();
-// Callback function to execute when mutations are observed
-const callback = function (mutationsList, observer) {
-    // Replace bodyContent with the actual body content, with rate limit of one page content extraction per second
-    const now = +new Date();
-    if (now - lastBodyExtractionTimestamp >= 750) { // 0.75 second (increased to 0.5 because it makes sense for young users who enjoy refreshing page quickly)
-        lastBodyExtractionTimestamp = now;
-        bodyContent = targetNode.outerHTML; // we will not just read but not write to the actual YouTube html content
-    }
-};
-
-// Create an observer instance linked to the callback function
-const observer = new MutationObserver(callback);
 
 // When YouTube Page URL is changed but still within YouTube website
 if (window === top) {
@@ -50,6 +33,7 @@ if (window === top) {
 }
 
 function executeYTCollectFn() {
+
     const URL = document.URL;
     console.log("Trigger executeYTCollectFn() at " + URL);
     // We only execute data collection function on the YouTube website
@@ -59,10 +43,6 @@ function executeYTCollectFn() {
         console.log("Encountering YouTube URL, continue executing");
         if (prevURL !== URL) {
             prevURL = URL;
-
-            if(isObservingDOM) {
-                stopObserveDOMChange();
-            }
 
             youTubeCategory = "Other";
 
@@ -88,37 +68,28 @@ function executeYTCollectFn() {
                 // Page visit start time will only refresh if content script is re-executed due to URL change
                 pageVisitStartTime = Date.now();
             }
-            startObserveDOMChange();
-
-
-            // When the user about to navigate away YouTube while still in YouTube website, the web page will load a
-            // new page with a new URL instead of URL change without page reloading
-            window.addEventListener('beforeunload', function () {
-                stopObserveDOMChange();
-            });
+            waitAndCollectBodyContent();
         }
     } else {
         console.log("This is not a YouTube URL, will not apply YouTube content parsing code");
     }
 }
 
+// This function that will trigger extractHTMLAndSendMsg() function with 5-second delay
+// with assumption that YouTube page is fully loaded within 5 seconds
+function waitAndCollectBodyContent() {
+    clearTimeout(loadingTimeOut);
+    loadingTimeOut = window.setTimeout(extractHTMLAndSendMsg, 5000);
+}
+
 /*
  *  YouTube Video Page data extraction functions
  */
 
-function startObserveDOMChange() {
-    // Start observing the target node for configured mutations
-    observer.observe(targetNode, config);
-}
-
-function stopObserveDOMChange() {
-    observer.disconnect();
+function extractHTMLAndSendMsg() {
+    clearTimeout(loadingTimeOut);
+    const bodyContent = targetNode.innerHTML;
     pageVisitStopTime = Date.now();
-    isObservingDOM = false;
-    sendMessage();
-}
-
-function sendMessage() {
     const pageVisitStartPlainTextDate = new Date(pageVisitStartTime);
     const pageVisitstopPlainTextDate = new Date(pageVisitStopTime);
     chrome.runtime.sendMessage({
@@ -137,16 +108,16 @@ function sendMessage() {
     });
 }
 
-executeYTCollectFn();
+// executeYTCollectFn();
 
 // When the YouTube Page is initially opened/loaded (at the first time)
 
 // These are unstable, as they won't always get fired whenever page is loaded
 
-// window.addEventListener('load', function () {
-//     console.log("Window Load Event Listener is triggered in the content script.");
-//     executeYTCollectFn();
-// });
+window.addEventListener('load', function () {
+    console.log("Window Load Event Listener is triggered in the content script.");
+    executeYTCollectFn();
+});
 //
 // document.addEventListener('DOMContentLoaded', function () {
 //     console.log("Window Load Event Listener is triggered in the content script.");
