@@ -9,7 +9,7 @@ let prevURL = undefined; // Check whether the YouTUbe URL actually same, and do 
 let loadingTimeOut = undefined;
 let youTubeCategory = "";
 let pageVisitStartTime = -1;
-let pageVisitStopTime = -1;
+let messageSentTimestamp = -1;
 
 console.log("Running YouTube content script");
 
@@ -89,15 +89,15 @@ function waitAndCollectBodyContent() {
 function extractHTMLAndSendMsg() {
     clearTimeout(loadingTimeOut);
     const bodyContent = targetNode.innerHTML;
-    pageVisitStopTime = Date.now();
+    messageSentTimestamp = Date.now();
     const pageVisitStartPlainTextDate = new Date(pageVisitStartTime);
-    const pageVisitstopPlainTextDate = new Date(pageVisitStopTime);
+    const messageSentTimePlainText = new Date(messageSentTimestamp);
     chrome.runtime.sendMessage({
         YTVideoInformation: true, // to distinguish my message from other message.
         page_visit_start_timestamp: pageVisitStartTime,
         page_visit_start_time_string: pageVisitStartPlainTextDate.toString(),
-        page_visit_stop_timestamp: pageVisitStopTime,
-        page_visit_stop_time_string: pageVisitstopPlainTextDate.toString(),
+        message_sent_timestamp: messageSentTimestamp,
+        message_sent_time_string: messageSentTimePlainText.toString(),
         site: "YouTube",
         type: youTubeCategory,
         currentURL: document.URL,
@@ -108,18 +108,19 @@ function extractHTMLAndSendMsg() {
     });
 }
 
-// executeYTCollectFn();
+executeYTCollectFn();
 
 // When the YouTube Page is initially opened/loaded (at the first time)
 
 // These are unstable, as they won't always get fired whenever page is loaded
+// Confirmed not-working YouTube page: https://www.youtube.com/c/sustainability ('load' and 'DOMContentLoaded' are never fired)
 
-window.addEventListener('load', function () {
-    console.log("Window Load Event Listener is triggered in the content script.");
-    executeYTCollectFn();
-});
-//
-// document.addEventListener('DOMContentLoaded', function () {
+// window.addEventListener('load', function () {
+//     console.log("Window Load Event Listener is triggered in the content script.");
+//     executeYTCollectFn();
+// });
+
+// window.addEventListener('DOMContentLoaded', function () {
 //     console.log("Window Load Event Listener is triggered in the content script.");
 //     executeYTCollectFn();
 // });

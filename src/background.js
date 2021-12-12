@@ -174,6 +174,11 @@ function checkRedirectionURL(urlInput) {
     // }
     //
 
+    // Filter short-hand YouTube videos URLs, such as yt.be/uivjA or youtu.be/
+    if (/^http[s]?:\/\/(www.)?yt.be\//ig.test(urlInput) || /^http[s]?:\/\/(www.)?yt.be\//ig.test(urlInput)) {
+        return "Short hand YouTube URL";
+    }
+
     // Filter Google regular link URL, such as https://www.google.com/url?sa=t&rct=j&q=&esrc=s&source=web&cd=&ved=2ahUKEwiN3r_M2Kr0AhVbLTQIHUUsCSoQFnoECAcQAQ&url=https%3A%2F%2Fzh.wikipedia.org%2Fzh%2F%25E4%25BC%258A%25E7%2588%25BE%25E5%25BA%25AB%25E7%2589%25B9MC-21&usg=AOvVaw3LDo5mq7NHxNH0KCPKCfcN
     if (urlInput.startsWith("https://www.google.com/url?")) {
         return "Google Search Result URL (from regular result)";
@@ -196,6 +201,11 @@ function checkRedirectionURL(urlInput) {
         return "Facebook External URL";
     }
 
+    // Filter Twitter redirection URL, such as https://t.co/7py0LfQNrc
+    if (urlInput.startsWith("https://t.co/")) {
+        return "Twitter External URL";
+    }
+
     // Filter Bing's first Ad redirect, such as https://www.bing.com/aclk?ld=e8QXzQGUIf2mnB_o6ea-NvOTVUCUy_fsb0wbrFqREmXev5yTGam5PXunvHOt8deFdqcB3CbmvWuqE7od_Uffr05F1rRq4rcshJ-e40nJNq7pQlVjAQS79L0vydHP6Odh-_f74znC6s9z16w1o9B104xdaGR0jh0KeYpVUhwsMr77dl6HuvanoDhqEVO9OxWD-twnpRWQ&u=aHR0cHMlM2ElMmYlMmZwaXhlbC5ldmVyZXN0dGVjaC5uZXQlMmY0NDIyJTJmY3ElM2Zldl9zaWQlM2QxMCUyNmV2X2xuJTNkYW1hem9uJTI1MjBhd3MlMjZldl9sdHglM2QlMjZldl9seCUzZGt3ZC03MTY3NTAxMTA2NTYzMyUzYWxvYy0xOTAlMjZldl9jcnglM2Q3MTY3NDU2NzQ5OTc0MCUyNmV2X210JTNkZSUyNmV2X2R2YyUzZGMlMjZldl9waHklM2Q3MTMyOCUyNmV2X2xvYyUzZCUyNmV2X2N4JTNkMzg4MjgwNzUyJTI2ZXZfYXglM2QxMTQ2NzkxMzc1MjY5MDMzJTI2ZXZfZXglM2QlMjZldl9lZmlkJTNkNmIxNWY1MGM0MjQzMThhYWVkYTA5NDk2YWI5MjQ3YmQlM2FHJTNhcyUyNnVybCUzZGh0dHBzJTI1M0ElMjUyRiUyNTJGYXdzLmFtYXpvbi5jb20lMjUyRmZyZWUlMjUyRiUyNTNGdHJrJTI1M0Rwc19hMTM0cDAwMDAwNnBrbGZBQUElMjUyNnRya0NhbXBhaWduJTI1M0RhY3FfcGFpZF9zZWFyY2hfYnJhbmQlMjUyNnNjX2NoYW5uZWwlMjUzRHBzJTI1MjZzY19jYW1wYWlnbiUyNTNEYWNxdWlzaXRpb25fVVMlMjUyNnNjX3B1Ymxpc2hlciUyNTNEQmluZyUyNTI2c2NfY2F0ZWdvcnklMjUzRGNvcmUlMjUyNnNjX2NvdW50cnklMjUzRFVTJTI1MjZzY19nZW8lMjUzRE5BTUVSJTI1MjZzY19vdXRjb21lJTI1M0RhY3ElMjUyNnNjX2RldGFpbCUyNTNEYW1hem9uJTI1MjUyMGF3cyUyNTI2c2NfY29udGVudCUyNTNEQW1hem9uJTI1MjUyMEFXU19lJTI1MjZzY19tYXRjaHR5cGUlMjUzRGUlMjUyNnNjX3NlZ21lbnQlMjUzRCUyNTI2c2NfbWVkaXVtJTI1M0RBQ1EtUCUyNTdDUFMtQkklMjU3Q0JyYW5kJTI1N0NEZXNrdG9wJTI1N0NTVSUyNTdDQVdTJTI1N0NDb3JlJTI1N0NVUyUyNTdDRU4lMjU3Q1RleHQlMjUyNnNfa3djaWQlMjUzREFMITQ0MjIhMTAhNzE2NzQ1Njc0OTk3NDAhNzE2NzUwMTEwNjU2MzMlMjUyNnNfa3djaWQlMjUzREFMITQ0MjIhMTAhNzE2NzQ1Njc0OTk3NDAhNzE2NzUwMTEwNjU2MzMlMjUyNmVmX2lkJTI1M0Q2YjE1ZjUwYzQyNDMxOGFhZWRhMDk0OTZhYjkyNDdiZCUyNTNBRyUyNTNBcw&rlid=6b15f50c424318aaeda09496ab9247bd
     if (urlInput.startsWith("https://www.bing.com/aclk?")) {
         return "Bing's Ad redirect (Type One)";
@@ -204,6 +214,11 @@ function checkRedirectionURL(urlInput) {
     // Filter Bing's secondary Ad Redirect, such as https://pixel.everesttech.net/4422/cq?ev_sid=10&ev_ln=amazon%20aws&ev_ltx=&ev_lx=kwd-71675011065633:loc-190&ev_crx=71674567499740&ev_mt=e&ev_dvc=c&ev_phy=71328&ev_loc=&ev_cx=388280752&ev_ax=1146791375269033&ev_ex=&ev_efid=6b15f50c424318aaeda09496ab9247bd:G:s&url=https%3A%2F%2Faws.amazon.com%2Ffree%2F%3Ftrk%3Dps_a134p000006pklfAAA%26trkCampaign%3Dacq_paid_search_brand%26sc_channel%3Dps%26sc_campaign%3Dacquisition_US%26sc_publisher%3DBing%26sc_category%3Dcore%26sc_country%3DUS%26sc_geo%3DNAMER%26sc_outcome%3Dacq%26sc_detail%3Damazon%2520aws%26sc_content%3DAmazon%2520AWS_e%26sc_matchtype%3De%26sc_segment%3D%26sc_medium%3DACQ-P%7CPS-BI%7CBrand%7CDesktop%7CSU%7CAWS%7CCore%7CUS%7CEN%7CText%26s_kwcid%3DAL!4422!10!71674567499740!71675011065633%26s_kwcid%3DAL!4422!10!71674567499740!71675011065633%26ef_id%3D6b15f50c424318aaeda09496ab9247bd%3AG%3As
     if (urlInput.startsWith("https://pixel.everesttech.net")) {
         return "Bing's Ad redirect (Type Two)";
+    }
+
+    // Filter short URL services
+    if (urlInput.startsWith("https://bit.ly") || /^https:\/\/.+tinyurl.com\//ig.test(urlInput)) {
+        return "Short URL Services";
     }
 
     return "Regular URL";
