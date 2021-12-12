@@ -37,7 +37,7 @@ function executeYTCollectFn() {
     const URL = document.URL;
     console.log("Trigger executeYTCollectFn() at " + URL);
     // We only execute data collection function on the YouTube website
-    if (/^http[s]?:\/\/www.youtube.com/ig.test(URL)) {
+    if (/^http[s]?:\/\/(www|music)\.youtube\.com/ig.test(URL)) {
         // Only execute content script functions if the current URL differs from previous URL
 
         console.log("Encountering YouTube URL, continue executing");
@@ -46,8 +46,12 @@ function executeYTCollectFn() {
 
             youTubeCategory = "Other";
 
+            if(/^http[s]?:\/\/music\.youtube\.com/ig.test(URL)) {
+                youTubeCategory = "YT Music";
+            }
+
             // We're at the YouTube video page
-            if (URL.includes("/watch?")) {
+            else if (URL.includes("/watch?")) {
                 console.log("Encountered Video Page at " + URL);
                 youTubeCategory = "Video";
             }

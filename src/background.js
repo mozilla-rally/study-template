@@ -174,8 +174,8 @@ function checkRedirectionURL(urlInput) {
     // }
     //
 
-    // Filter short-hand YouTube videos URLs, such as yt.be/uivjA or youtu.be/
-    if (/^http[s]?:\/\/(www.)?yt.be\//ig.test(urlInput) || /^http[s]?:\/\/(www.)?yt.be\//ig.test(urlInput)) {
+    // Filter short-hand YouTube videos URLs, such as yt.be/uivjA or youtu.be/ , which in itself has a redirect to youtube.com
+    if (/^http[s]?:\/\/(www.)?yt\.be\//ig.test(urlInput) || /^http[s]?:\/\/(www.)?yt\.be\//ig.test(urlInput)) {
         return "Short hand YouTube URL";
     }
 
@@ -192,7 +192,7 @@ function checkRedirectionURL(urlInput) {
 
     // Filter another kind of Google Ad Link URL, such as https://pagead2.googlesyndication.com/pcs/activeview?xai=AKAOjsuR5JAvkFVvMuX8wfOyhMwG88PjLgRYVKG8L4B0J1NrMhf3Lbtit5nDnvRErXyPHZFyZK79vtrYxfivJNed_kuOX1KlS1GFkW0w8HSudEi494TOBZnHIg&sai=AMfl-YQaqJSdfqek9yKzy3esFZ0QnsH-gkc8JlRUdLGxheC3st0jJsRxQVJaKL5klI2VBXbVmbyi6TrG-Ich&sig=Cg0ArKJSzHDyov5OtJHGEAE&acvw=[VIEWABILITY]&v=2.20211119.01.00
     // It will return true if URL contains googlesyndication.com
-    if (/^https:\/\/.+googlesyndication.com\//ig.test(urlInput)) {
+    if (/^https:\/\/.+googlesyndication\.com\//ig.test(urlInput)) {
         return "Google Ad External URL (Type Two)";
     }
 
@@ -217,7 +217,7 @@ function checkRedirectionURL(urlInput) {
     }
 
     // Filter short URL services
-    if (urlInput.startsWith("https://bit.ly") || /^https:\/\/.+tinyurl.com\//ig.test(urlInput)) {
+    if (urlInput.startsWith("https://bit.ly") || /^https:\/\/.+tinyurl\.com\//ig.test(urlInput)) {
         return "Short URL Services";
     }
 
@@ -332,7 +332,7 @@ function recordURLHistory(currURL) {
     }
 
     // If we start at YouTube URL, record this as initial visit
-    else if (/^http[s]?:\/\/www.youtube.com/ig.test(lastURLs[0]) && lastURLs.length === 1) {
+    else if (/^http[s]?:\/\/(www|music)\.youtube\.com/ig.test(lastURLs[0]) && lastURLs.length === 1) {
         console.log("Triggered condition 0.5: If we start at YouTube URL (from nothing), record this as initial visit and clear temporary record");
         const unixTimestamp = Date.now();
         const date = new Date(unixTimestamp);
@@ -345,22 +345,22 @@ function recordURLHistory(currURL) {
     }
 
     // If previous URL is YouTube and current URL is YouTube, do nothing and clear temporary record
-    else if (/^http[s]?:\/\/www.youtube.com/ig.test(lastURLs[0]) && /^http[s]?:\/\/www.youtube.com/ig.test(currURL)) {
+    else if (/^http[s]?:\/\/(www|music)\.youtube\.com/ig.test(lastURLs[0]) && /^http[s]?:\/\/(www|music)\.youtube\.com/ig.test(currURL)) {
         console.log("Triggered condition 1: If previous URL is YouTube and current URL is YouTube, do nothing and clear temporary record");
         lastURLs = [currURL];
     }
 
     // If neither previous URL nor current URL is YouTube or redirecting URL, clear temporary record
-    else if (!/^http[s]?:\/\/www.youtube.com/ig.test(lastURLs[0]) && !/^http[s]?:\/\/www.youtube.com/ig.test(currURL) &&
+    else if (!/^http[s]?:\/\/(www|music)\.youtube\.com/ig.test(lastURLs[0]) && !/^http[s]?:\/\/(www|music)\.youtube\.com/ig.test(currURL) &&
         checkRedirectionURL(lastURLs[0]) === "Regular URL" && checkRedirectionURL(currURL) === "Regular URL") {
         console.log("Triggered condition 2: If neither previous URL nor current URL is YouTube or redirecting URL, clear temporary record");
         lastURLs = [currURL];
     }
 
     // We've eliminated the regular URL case to regular URL case
-    else if (!/^http[s]?:\/\/www.youtube.com/ig.test(lastURLs[0])) {
+    else if (!/^http[s]?:\/\/(www|music)\.youtube\.com/ig.test(lastURLs[0])) {
         // We've arrived to YouTube from a non-YouTube URL, record this YouTube arrival and clear temporary record
-        if (/^http[s]?:\/\/www.youtube.com/ig.test(currURL)) {
+        if (/^http[s]?:\/\/(www|music)\.youtube\.com/ig.test(currURL)) {
             console.log("Triggered condition 3: We've arrived to YouTube from a non-YouTube URL, record this YouTube arrival and clear temporary record.");
             const unixTimestamp = Date.now();
             const date = new Date(unixTimestamp);
@@ -374,7 +374,7 @@ function recordURLHistory(currURL) {
         }
     }
     // We've eliminated the within YouTube navigation case
-    else if (/^http[s]?:\/\/www.youtube.com/ig.test(lastURLs[0])) {
+    else if (/^http[s]?:\/\/(www|music)\.youtube\.com/ig.test(lastURLs[0])) {
         // We left YouTube, record this YouTube departure and clear temporary record
         if (checkRedirectionURL(currURL) === "Regular URL") {
             console.log("Triggered condition 4: We left YouTube, record this YouTube departure and clear temporary record");
