@@ -3,7 +3,7 @@
   "author": "Mozilla",
   "manifest_version": 2,
   "name": "Rally Study Template",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "homepage_url": "https://github.com/mozilla-rally/study-template",
   "browser_specific_settings": {
     "gecko": {
@@ -30,16 +30,16 @@
     {
       "matches": [
         "http://localhost/*",
-        "https://rally-web-spike.web.app/*"
+        "https://members.rally.mozilla.org/*"
       ],
       "js": [
-        "dist/content/rally-content.js"
+        "dist/main.content.js"
       ]
     }
   ],
   "background": {
     "scripts": [
-      "dist/browser-polyfill.js",
+      "dist/browser-polyfill.min.js",
       "dist/background.js"
     ]
   },
