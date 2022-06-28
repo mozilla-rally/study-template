@@ -41,7 +41,7 @@
     "dexie": "^3.2.2",
     "eslint": "^8.16.0",
     "eslint-plugin-import": "^2.26.0",
-    "eslint-plugin-mocha": "^10.0.3",
+    "eslint-plugin-mocha": "^10.0.5",
     "eslint-plugin-node": "^11.1.0",
     "geckodriver": "^3.0.1",
     "globby": "^11.0.3",
