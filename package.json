@@ -26,7 +26,7 @@
     "dev:webext": "web-ext run -t ${TARGET=chromium} --start-url 'https://example.com' --watch-file dist/exampleWorkerScript.worker.js"
   },
   "devDependencies": {
-    "@babel/preset-env": "^7.16.11",
+    "@babel/preset-env": "^7.18.10",
     "@babel/preset-typescript": "^7.17.12",
     "@mozilla/glean": "^1.0.0",
     "@mozilla/rally-sdk": "^0.9.14",
