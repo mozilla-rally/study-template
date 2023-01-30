@@ -39,7 +39,7 @@
     "@types/selenium-webdriver": "^4.0.18",
     "chromedriver": "^103.0.0",
     "dexie": "^3.2.2",
-    "eslint": "^8.16.0",
+    "eslint": "^8.33.0",
     "eslint-plugin-import": "^2.26.0",
     "eslint-plugin-mocha": "^10.0.3",
     "eslint-plugin-node": "^11.1.0",
